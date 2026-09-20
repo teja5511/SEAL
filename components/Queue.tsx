@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import type { AlertLevel, RankedNala } from "@/lib/types";
-import { AlertMark } from "@/components/AlertMark";
+import React, { useMemo, useState } from "react";
+import type { RankedNala } from "@/lib/types";
 import { LocalCaption, useDrainCopy } from "./LocaleContext";
 
 interface QueueProps {
@@ -10,183 +9,218 @@ interface QueueProps {
   selectedId: string | null;
   onSelectNala: (nala: RankedNala) => void;
   onDispatchNala?: (nalaId: string) => void;
+  search?: string;
+  onSearch?: (q: string) => void;
+  activeCrews?: number;
+  completed?: number;
 }
 
-export function Queue({ nalas, selectedId, onSelectNala, onDispatchNala }: QueueProps) {
-  const [filter, setFilter] = useState<"ALL" | AlertLevel>("ALL");
-  const [search, setSearch] = useState("");
-  const { searchHint, glossary, showLocal } = useDrainCopy();
+function shortPlace(n: RankedNala) {
+  if (n.nameEn.includes(" at ")) return n.nameEn.split(" at ").pop() as string;
+  if (n.nameEn.includes(" near ")) return n.nameEn.split(" near ").pop() as string;
+  const cut = n.nameEn.replace(/ storm-?drain/i, "").replace(/ inner/i, "");
+  return cut.length > 22 ? n.ward : cut;
+}
 
-  const filteredNalas = nalas.filter((n) => {
-    if (filter !== "ALL" && n.alert !== filter) return false;
-    if (search) {
-      const q = search.toLowerCase();
+function clogTenth(n: RankedNala) {
+  return Math.max(1, Math.min(10, Math.round(n.clog / 10)));
+}
+
+function riskColor(risk: number) {
+  if (risk >= 220) return "text-danger";
+  if (risk >= 90) return "text-amber";
+  return "text-teal";
+}
+
+export function Queue({
+  nalas,
+  selectedId,
+  onSelectNala,
+  onDispatchNala,
+  search = "",
+  onSearch,
+  activeCrews,
+  completed,
+}: QueueProps) {
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [alertFilter, setAlertFilter] = useState<"ALL" | "RED" | "YELLOW" | "WATCH">("ALL");
+  const { searchHint } = useDrainCopy();
+
+  const crews = activeCrews ?? nalas.filter((n) => n.status === "dispatched" || n.status === "held").length;
+  const done = completed ?? nalas.filter((n) => n.status === "verified").length;
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return nalas.filter((n) => {
+      if (alertFilter !== "ALL" && n.alert !== alertFilter) return false;
+      if (!q) return true;
       return (
         n.nameEn.toLowerCase().includes(q) ||
         n.nameTe.toLowerCase().includes(q) ||
         n.ward.toLowerCase().includes(q) ||
         n.id.toLowerCase().includes(q)
       );
-    }
-    return true;
-  });
-
-  const getAlertBadge = (alert: AlertLevel) => {
-    switch (alert) {
-      case "RED":
-        return "bg-danger/20 border-danger/60 text-danger";
-      case "YELLOW":
-        return "bg-amber/20 border-amber/60 text-amber";
-      case "WATCH":
-      default:
-        return "bg-teal/20 border-teal/50 text-teal";
-    }
-  };
-
-  const getStatusBadge = (status: RankedNala["status"]) => {
-    switch (status) {
-      case "verified":
-        return "bg-teal/25 border-teal text-teal";
-      case "held":
-        return "bg-danger/25 border-danger text-danger";
-      case "dispatched":
-        return "bg-amber/25 border-amber text-amber";
-      case "queued":
-        return "bg-lagoon/20 border-lagoon/50 text-lagoon";
-      case "idle":
-      default:
-        return "bg-line/60 border-line text-mute";
-    }
-  };
+    });
+  }, [nalas, search, alertFilter]);
 
   return (
-    <div className="hud-glass flex h-full flex-col overflow-hidden rounded-hud shadow-hud">
-      <div className="border-b border-line p-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-            <h2 className="font-display text-sm font-bold uppercase tracking-wide text-paper">Drain queue</h2>
-          </div>
-          <span className="rounded border border-line bg-ink px-2 py-0.5 font-mono text-xs text-mute">
-            {filteredNalas.length} / {nalas.length}
+    <section className="board-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
+      <div className="flex items-center justify-between gap-2 border-b border-line/80 px-3 py-2.5">
+        <h2 className="text-[13px] font-semibold text-paper">Priority Queue</h2>
+        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-mute">
+          <span>
+            Active Crews <span className="ml-1 text-sm font-bold tabular-nums text-paper">{crews}</span>
           </span>
-        </div>
-        {showLocal ? (
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-mute">{glossary}</p>
-        ) : (
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-mute">Storm drain queue</p>
-        )}
-
-        <input
-          type="text"
-          placeholder={searchHint}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-line bg-ink px-2.5 py-1.5 font-mono text-xs text-paper placeholder-mute focus:border-teal focus:outline-none"
-        />
-
-        <div className="mt-2 grid grid-cols-4 gap-1">
-          {(["ALL", "RED", "YELLOW", "WATCH"] as const).map((lvl) => (
+          <span>
+            Completed <span className="ml-1 text-sm font-bold tabular-nums text-teal">{done}</span>
+          </span>
+          <div className="relative">
             <button
-              key={lvl}
               type="button"
-              onClick={() => setFilter(lvl)}
-              className={`rounded border py-1 font-mono text-[11px] transition ${
-                filter === lvl
-                  ? "border-teal bg-teal/20 font-bold text-teal"
-                  : "border-line bg-ink text-mute hover:border-mute/40"
-              }`}
+              onClick={() => setFilterOpen((v) => !v)}
+              className="rounded-md border border-line px-1.5 py-1 text-mute hover:text-paper"
+              aria-label="Filter queue"
             >
-              {lvl}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                <path d="M2 3h10M4 7h6M6 11h2" stroke="currentColor" strokeLinecap="round" />
+              </svg>
             </button>
-          ))}
+            {filterOpen && (
+              <div className="absolute right-0 z-20 mt-1 w-28 overflow-hidden rounded-lg border border-line bg-panel shadow-hud">
+                {(["ALL", "RED", "YELLOW", "WATCH"] as const).map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => {
+                      setAlertFilter(lvl);
+                      setFilterOpen(false);
+                    }}
+                    className={`block w-full px-2 py-1.5 text-left font-mono text-[10px] ${
+                      alertFilter === lvl ? "bg-teal/15 text-teal" : "text-mute hover:text-paper"
+                    }`}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 space-y-1 overflow-y-auto p-1.5">
-        {filteredNalas.length === 0 && (
-          <div className="m-2 rounded-md border border-line bg-ink/50 p-4 text-center">
-            <p className="font-mono text-[11px] uppercase tracking-widest text-mute">No pins in this filter</p>
-            <p className="mt-1 text-xs text-mute">Clear search or switch ALL / RED / YELLOW / WATCH.</p>
-          </div>
-        )}
-        {filteredNalas.map((n, index) => {
-          const isSelected = n.id === selectedId;
-          return (
-            <div
-              key={n.id}
-              onClick={() => onSelectNala(n)}
-              className={`cursor-pointer rounded-lg border p-2.5 transition ${
-                isSelected
-                  ? "border-teal bg-ink shadow-glow"
-                  : "border-transparent bg-ink/30 hover:border-line hover:bg-ink/55"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-mute">#{index + 1}</span>
-                  <AlertMark alert={n.alert} sealed={n.status === "verified"} held={n.status === "held"} />
-                  <span className={`rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold ${getAlertBadge(n.alert)}`}>
-                    {n.alert}
-                  </span>
-                  <span className="font-mono text-xs font-semibold text-paper">{n.id}</span>
-                </div>
+      {onSearch && (
+        <label className="sr-only" htmlFor="queue-search">
+          {searchHint}
+        </label>
+      )}
 
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase ${getStatusBadge(
-                      n.status
-                    )}`}
-                  >
-                    {n.status}
-                  </span>
-                  <span className="font-mono text-xs font-bold text-teal">Risk {n.risk}</span>
-                </div>
-              </div>
-
-              <div className="mt-1">
-                <div className="truncate text-xs font-semibold text-paper/90">{n.nameEn}</div>
-                <LocalCaption text={n.nameTe} className="truncate font-sans text-[11px] text-mute/80" />
-              </div>
-
-              <div className="mt-2 flex items-center gap-2">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-line/40 bg-ink">
-                  <div
-                    className={`h-full rounded-full ${
-                      n.clog >= 85 ? "bg-danger" : n.clog >= 65 ? "bg-amber" : "bg-teal"
-                    }`}
-                    style={{ width: `${n.clog}%` }}
-                  />
-                </div>
-                <span className="whitespace-nowrap font-mono text-[10px] text-mute">
-                  {n.clog}% clog · {n.clogClass}
-                </span>
-              </div>
-
-              <div className="mt-1.5 flex items-center justify-between font-mono text-[10px] text-mute">
-                <span>Ward: {n.ward}</span>
-                <span>{n.households.toLocaleString()} HH</span>
-                <span>p90 {n.precipP90Mm.toFixed(0)}mm</span>
-              </div>
-
-              {isSelected && n.status === "idle" && onDispatchNala && (
-                <div className="mt-2 flex justify-end border-t border-line/40 pt-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDispatchNala(n.id);
-                    }}
-                    className="rounded border border-teal bg-teal/20 px-2 py-1 font-mono text-[11px] font-semibold text-teal hover:bg-teal/30"
-                  >
-                    Dispatch {n.crew} · ₹{n.payInr}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+        <table className="w-full table-fixed text-left text-[11px]">
+          <colgroup>
+            <col className="w-8" />
+            <col />
+            <col className="w-14" />
+            <col className="w-14" />
+            <col className="w-14" />
+            <col className="w-[4.75rem]" />
+          </colgroup>
+          <thead className="sticky top-0 bg-elevated/95 font-mono text-[9px] uppercase tracking-wider text-mute">
+            <tr>
+              <th className="px-2 py-2 font-medium">#</th>
+              <th className="px-2 py-2 font-medium">Drain / Location</th>
+              <th className="px-2 py-2 font-medium">Risk ↓</th>
+              <th className="px-2 py-2 font-medium">p90</th>
+              <th className="px-2 py-2 font-medium">Clog</th>
+              <th className="px-2 py-2 font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-3 py-8 text-center text-mute">
+                  No drains match this filter.
+                </td>
+              </tr>
+            )}
+            {rows.map((n, index) => {
+              const selected = n.id === selectedId;
+              return (
+                <tr
+                  key={n.id}
+                  onClick={() => onSelectNala(n)}
+                  className={`cursor-pointer border-t border-line/60 ${selected ? "bg-teal/10" : "hover:bg-ink/40"}`}
+                >
+                  <td className="px-2 py-2 font-mono text-mute">{index + 1}</td>
+                  <td className="truncate px-2 py-2">
+                    <div className="font-mono text-[10px] text-mute">{n.id}</div>
+                    <div className="truncate text-[12px] font-medium text-paper">{shortPlace(n)}</div>
+                    <LocalCaption text={n.nameTe} className="truncate text-[10px] text-mute" />
+                  </td>
+                  <td className={`px-2 py-2 font-mono text-[13px] font-bold tabular-nums ${riskColor(n.risk)}`}>{n.risk}</td>
+                  <td className="px-2 py-2 font-mono tabular-nums text-paper">{Math.round(n.precipP90Mm)}</td>
+                  <td className="whitespace-nowrap px-2 py-2 font-mono tabular-nums text-paper">
+                    {clogTenth(n)}
+                    <span className="text-mute">/10</span>
+                  </td>
+                  <td className="px-1.5 py-2">
+                    <RowAction nala={n} onDispatch={onDispatchNala} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </div>
+
+      <div className="flex items-center justify-between border-t border-line/80 px-3 py-2 text-[11px]">
+        <span className="text-teal">
+          View all drains → <span className="text-mute">{rows.length} shown</span>
+        </span>
+        <span className="font-mono text-[10px] text-mute">Sort: Risk</span>
+      </div>
+    </section>
+  );
+}
+
+function RowAction({ nala, onDispatch }: { nala: RankedNala; onDispatch?: (id: string) => void }) {
+  if (nala.status === "held") {
+    return (
+      <span className="inline-flex rounded-md border border-danger/50 bg-danger/15 px-2 py-1 font-mono text-[10px] font-bold uppercase text-danger">
+        HOLD
+      </span>
+    );
+  }
+  if (nala.status === "verified") {
+    return (
+      <a
+        href="/ledger"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex rounded-md border border-teal/40 px-2 py-1 font-mono text-[10px] font-semibold uppercase text-teal"
+      >
+        Paid
+      </a>
+    );
+  }
+  if (nala.status === "dispatched") {
+    return (
+      <span className="inline-flex rounded-md border border-line px-2 py-1 font-mono text-[10px] uppercase text-mute">
+        En route
+      </span>
+    );
+  }
+  const urgent = nala.alert === "RED";
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onDispatch?.(nala.id);
+      }}
+      className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ${
+        urgent ? "bg-danger text-white hover:bg-danger/90" : "border border-amber/50 bg-amber/15 text-amber hover:bg-amber/25"
+      }`}
+    >
+      {urgent ? "Dispatch" : "Assign"}
+    </button>
   );
 }

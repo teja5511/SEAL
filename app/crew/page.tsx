@@ -129,7 +129,7 @@ export default function CrewPage() {
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight">WhatsApp is the dispatch radio.</h1>
         <p className="mt-3 max-w-xl text-sm text-mute">
           Dispatch is in English so anyone can follow the job. Telugu is the Hyderabad crew language — turn on{" "}
-          <span className="font-mono text-teal">EN+TE</span> in the header if you want the local field radio. Heat HOLD
+          <span className="font-mono text-teal">EN+TE</span> in the sidebar if you want the local field radio. Heat HOLD
           cannot be overridden. After-photo is the only way money moves.
         </p>
         <p className="mt-3 font-mono text-[11px] text-amber">

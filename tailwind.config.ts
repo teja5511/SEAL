@@ -5,15 +5,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#06090d",
-        panel: "#0c1218",
-        elevated: "#121a22",
-        line: "#1c2c36",
+        ink: "#061018",
+        panel: "#0b1520",
+        elevated: "#10202c",
+        line: "#1a3344",
         teal: "#2ee6c5",
-        lagoon: "#7ae2cf",
+        lagoon: "#7ad4ff",
         amber: "#ffb020",
-        danger: "#ff5c6a",
-        mute: "#8b97a8",
+        danger: "#ff4d62",
+        mute: "#8aa0b5",
         paper: "#e8eef6",
       },
       fontFamily: {
@@ -26,7 +26,7 @@ const config: Config = {
         hud: "0 18px 50px rgba(0, 0, 0, 0.45)",
       },
       borderRadius: {
-        hud: "14px",
+        hud: "16px",
       },
     },
   },

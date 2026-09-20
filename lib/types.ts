@@ -3,6 +3,8 @@ export type CrewSignal = "WORK" | "SHADE_BREAK" | "HOLD";
 export type JobStatus = "idle" | "queued" | "dispatched" | "held" | "verified" | "rejected";
 export type AlertLevel = "WATCH" | "YELLOW" | "RED";
 export type DataSource = "weathernext3" | "open-meteo" | "replay" | "gee-cache";
+export type MapLayer = "risk" | "rainfall" | "wbgt";
+export type MapVisible = { RED: boolean; YELLOW: boolean; WATCH: boolean; sealed: boolean };
 
 export type NalaSeed = {
   id: string;
