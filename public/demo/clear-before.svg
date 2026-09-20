@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="calmBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1014"/>
+      <stop offset="100%" stop-color="#101920"/>
+    </linearGradient>
+    <linearGradient id="wallClean" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e2832"/>
+      <stop offset="50%" stop-color="#2d3c4a"/>
+      <stop offset="100%" stop-color="#1e2832"/>
+    </linearGradient>
+    <linearGradient id="flowingWater" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#14363b"/>
+      <stop offset="100%" stop-color="#0e2326"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#calmBg)"/>
+
+  <!-- Channel Walls -->
+  <polygon points="120,180 220,540 580,540 680,180 600,180 520,490 280,490 200,180" fill="url(#wallClean)" stroke="#394b5c" stroke-width="4"/>
+  <rect x="280" y="490" width="240" height="50" fill="#151e26"/>
+
+  <!-- Flowing Water with Low Clog -->
+  <path d="M 240,460 Q 400,470 560,460 L 580,540 L 220,540 Z" fill="url(#flowingWater)"/>
+
+  <!-- Water Surface Ripples -->
+  <path d="M 280,480 Q 400,465 520,480" stroke="#2ee6c5" stroke-width="2" fill="none" opacity="0.4"/>
+  <path d="M 310,510 Q 400,495 490,510" stroke="#2ee6c5" stroke-width="1.5" fill="none" opacity="0.3"/>
+
+  <!-- Clean Grate Bars with minimal leaf debris -->
+  <g stroke="#4b6075" stroke-width="5">
+    <line x1="280" y1="200" x2="300" y2="470"/>
+    <line x1="360" y1="200" x2="370" y2="470"/>
+    <line x1="440" y1="200" x2="430" y2="470"/>
+    <line x1="520" y1="200" x2="500" y2="470"/>
+  </g>
+
+  <!-- Minor organic leaves at corner -->
+  <circle cx="305" cy="465" r="8" fill="#586e3f" opacity="0.7"/>
+  <circle cx="315" cy="468" r="6" fill="#4d5c36" opacity="0.7"/>
+
+  <!-- HUD Telemetry -->
+  <rect x="30" y="30" width="310" height="90" rx="8" fill="#07080a" fill-opacity="0.9" stroke="#2ee6c5" stroke-width="1.5"/>
+  <circle cx="55" cy="60" r="10" fill="#2ee6c5"/>
+  <text x="75" y="58" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold">CLOG: 38% · CLEAR FLOW</text>
+  <text x="75" y="80" fill="#8b97a8" font-family="monospace" font-size="13">N-09 BANJARA HILLS CULVERT</text>
+  <text x="75" y="102" fill="#2ee6c5" font-family="monospace" font-size="12">STATUS: WATCH PASS</text>
+
+  <!-- Stamp -->
+  <rect x="570" y="30" width="200" height="40" rx="6" fill="#102528" stroke="#2ee6c5" stroke-width="1.5"/>
+  <text x="670" y="55" fill="#2ee6c5" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">BASELINE CLEAR</text>
+</svg>

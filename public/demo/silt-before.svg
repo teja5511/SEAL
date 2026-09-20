@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skyDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c10"/>
+      <stop offset="100%" stop-color="#12161f"/>
+    </linearGradient>
+    <linearGradient id="concreteWall" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#242c36"/>
+      <stop offset="50%" stop-color="#344150"/>
+      <stop offset="100%" stop-color="#242c36"/>
+    </linearGradient>
+    <linearGradient id="mudSediment" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a3b2c"/>
+      <stop offset="60%" stop-color="#3b2d20"/>
+      <stop offset="100%" stop-color="#2a1f14"/>
+    </linearGradient>
+    <linearGradient id="sludgeWater" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a332a"/>
+      <stop offset="100%" stop-color="#141a14"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#skyDark)"/>
+
+  <!-- Concrete Culvert Bed & Walls -->
+  <polygon points="100,160 220,540 580,540 700,160 620,160 530,480 270,480 180,160" fill="url(#concreteWall)" stroke="#3e4d5e" stroke-width="4"/>
+  <rect x="270" y="480" width="260" height="60" fill="#1b2129"/>
+
+  <!-- Thick Silt Bed filling 78% of the trench -->
+  <path d="M 210,410 Q 300,380 400,390 T 590,410 L 630,570 L 170,570 Z" fill="url(#mudSediment)" stroke="#5c4936" stroke-width="3"/>
+  
+  <!-- Mud fissures, mud piles & sandbank ridges -->
+  <path d="M 240,430 Q 330,410 420,440 T 560,420" stroke="#6b5540" stroke-width="5" fill="none"/>
+  <path d="M 280,470 Q 370,450 480,480" stroke="#6b5540" stroke-width="4" fill="none"/>
+  
+  <!-- Stagnant Trickle of Water choked by silt -->
+  <path d="M 360,390 Q 400,410 390,460 T 430,520 L 390,540 Q 360,480 340,440 Z" fill="url(#sludgeWater)" opacity="0.9"/>
+
+  <!-- Drainage bars buried deep in silt -->
+  <g stroke="#526275" stroke-width="6" opacity="0.7">
+    <line x1="260" y1="200" x2="290" y2="440"/>
+    <line x1="340" y1="200" x2="360" y2="420"/>
+    <line x1="420" y1="200" x2="430" y2="430"/>
+    <line x1="500" y1="200" x2="500" y2="430"/>
+    <line x1="580" y1="200" x2="570" y2="440"/>
+  </g>
+
+  <!-- High Silt Line Markers -->
+  <line x1="160" y1="380" x2="200" y2="380" stroke="#ffb020" stroke-width="3" stroke-dasharray="4,4"/>
+  <line x1="600" y1="380" x2="640" y2="380" stroke="#ffb020" stroke-width="3" stroke-dasharray="4,4"/>
+  <text x="140" y="385" fill="#ffb020" font-family="monospace" font-size="12" text-anchor="end">SILT LEVEL: 78%</text>
+
+  <!-- HUD Telemetry -->
+  <rect x="30" y="30" width="310" height="90" rx="8" fill="#07080a" fill-opacity="0.9" stroke="#ffb020" stroke-width="2"/>
+  <circle cx="55" cy="60" r="10" fill="#ffb020" filter="url(#glow)"/>
+  <text x="75" y="58" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold">CLOG: 78% · HEAVY SILT</text>
+  <text x="75" y="80" fill="#8b97a8" font-family="monospace" font-size="13">N-02 PURANAPUL RIVER MOUTH</text>
+  <text x="75" y="102" fill="#ffb020" font-family="monospace" font-size="12">DESILTING CREW ASSIGNED</text>
+
+  <!-- Stamp -->
+  <rect x="570" y="30" width="200" height="40" rx="6" fill="#1c232c" stroke="#ffb020" stroke-width="1.5"/>
+  <text x="670" y="55" fill="#ffb020" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">BEFORE AUDIT</text>
+</svg>

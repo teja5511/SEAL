@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #06090d;
+  --panel: #0c1218;
+  --line: #1c2c36;
+  --teal: #2ee6c5;
+  --amber: #ffb020;
+  --danger: #ff5c6a;
+  --paper: #e8eef6;
+}
+
+html,
+body {
+  background: var(--ink);
+  color: var(--paper);
+  min-height: 100%;
+}
+
+body {
+  background-image:
+    radial-gradient(900px 480px at 88% -18%, rgba(46, 230, 197, 0.07), transparent 58%),
+    radial-gradient(640px 360px at -8% 108%, rgba(255, 176, 32, 0.05), transparent 52%);
+}
+
+body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+::selection {
+  background: rgba(46, 230, 197, 0.28);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(46, 230, 197, 0.7);
+  outline-offset: 2px;
+}
+
+.hud-glass {
+  background: rgba(12, 18, 24, 0.82);
+  border: 1px solid rgba(28, 44, 54, 0.95);
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.map-vignette {
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(6, 9, 13, 0.78) 100%);
+}
+
+.scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgba(46, 230, 197, 0.04) 2px 3px
+  );
+}
+
+.radar-sweep {
+  background: conic-gradient(from 0deg, transparent 0 78%, rgba(46, 230, 197, 0.16) 88%, transparent 100%);
+  animation: sweep 8s linear infinite;
+}
+
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.maplibregl-map,
+.maplibregl-canvas-container,
+.maplibregl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.maplibregl-popup-content {
+  background: #0c1218 !important;
+  color: #e8eef6 !important;
+  border: 1px solid #1c2c36;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #0c1218 !important;
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: #0c1218 !important;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes radar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar {
+  animation: radar 2.8s linear infinite;
+}

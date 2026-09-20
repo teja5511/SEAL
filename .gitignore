@@ -1,0 +1,8 @@
+node_modules
+.next
+.env
+.env.local
+*.pem
+.private-key.json
+.DS_Store
+*.tsbuildinfo

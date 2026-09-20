@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-09-20T12:00:00Z",
+  "center": {
+    "lat": 17.385,
+    "lng": 78.486
+  },
+  "weathernext3": {
+    "source": "weathernext3",
+    "assetId": "projects/gcp-public-data-weathernext/assets/weathernext_3_0_0_0p1deg",
+    "initTime": "2026-09-20T12:00:00Z",
+    "precipMeanMm": 28.4,
+    "precipP90Mm": 41.2,
+    "tempC": 29.8,
+    "dewC": 25.2,
+    "humidity": 76,
+    "windMs": 3.2,
+    "bands": [
+      "total_precipitation_1hr_mean",
+      "total_precipitation_1hr_p90",
+      "temperature_2m_mean",
+      "dewpoint_temperature_2m_mean"
+    ]
+  },
+  "nalas": {
+    "N-01": { "waterProb": 0.68, "ndwi": 0.28, "ndbi": 0.46, "elevationM": 485, "precipP90Mm": 42.5 },
+    "N-02": { "waterProb": 0.62, "ndwi": 0.24, "ndbi": 0.44, "elevationM": 488, "precipP90Mm": 39.8 },
+    "N-03": { "waterProb": 0.74, "ndwi": 0.32, "ndbi": 0.48, "elevationM": 482, "precipP90Mm": 44.1 },
+    "N-04": { "waterProb": 0.45, "ndwi": 0.12, "ndbi": 0.42, "elevationM": 515, "precipP90Mm": 36.5 },
+    "N-05": { "waterProb": 0.38, "ndwi": 0.08, "ndbi": 0.41, "elevationM": 524, "precipP90Mm": 34.2 },
+    "N-06": { "waterProb": 0.58, "ndwi": 0.22, "ndbi": 0.45, "elevationM": 492, "precipP90Mm": 40.8 },
+    "N-07": { "waterProb": 0.72, "ndwi": 0.31, "ndbi": 0.47, "elevationM": 486, "precipP90Mm": 43.6 },
+    "N-08": { "waterProb": 0.22, "ndwi": -0.05, "ndbi": 0.36, "elevationM": 528, "precipP90Mm": 28.0 },
+    "N-09": { "waterProb": 0.18, "ndwi": -0.09, "ndbi": 0.34, "elevationM": 542, "precipP90Mm": 24.5 },
+    "N-10": { "waterProb": 0.42, "ndwi": 0.11, "ndbi": 0.42, "elevationM": 520, "precipP90Mm": 35.8 },
+    "N-11": { "waterProb": 0.78, "ndwi": 0.35, "ndbi": 0.49, "elevationM": 480, "precipP90Mm": 45.2 },
+    "N-12": { "waterProb": 0.54, "ndwi": 0.19, "ndbi": 0.44, "elevationM": 505, "precipP90Mm": 38.9 },
+    "N-13": { "waterProb": 0.31, "ndwi": 0.02, "ndbi": 0.38, "elevationM": 532, "precipP90Mm": 30.5 },
+    "N-14": { "waterProb": 0.65, "ndwi": 0.26, "ndbi": 0.46, "elevationM": 489, "precipP90Mm": 41.5 },
+    "N-15": { "waterProb": 0.40, "ndwi": 0.09, "ndbi": 0.41, "elevationM": 522, "precipP90Mm": 35.0 },
+    "N-16": { "waterProb": 0.51, "ndwi": 0.17, "ndbi": 0.43, "elevationM": 508, "precipP90Mm": 37.8 },
+    "N-17": { "waterProb": 0.35, "ndwi": 0.05, "ndbi": 0.39, "elevationM": 518, "precipP90Mm": 32.4 },
+    "N-18": { "waterProb": 0.76, "ndwi": 0.34, "ndbi": 0.48, "elevationM": 481, "precipP90Mm": 44.8 },
+    "N-19": { "waterProb": 0.24, "ndwi": -0.04, "ndbi": 0.37, "elevationM": 535, "precipP90Mm": 26.8 },
+    "N-20": { "waterProb": 0.37, "ndwi": 0.07, "ndbi": 0.40, "elevationM": 530, "precipP90Mm": 33.5 },
+    "N-21": { "waterProb": 0.49, "ndwi": 0.15, "ndbi": 0.43, "elevationM": 512, "precipP90Mm": 37.0 },
+    "N-22": { "waterProb": 0.44, "ndwi": 0.12, "ndbi": 0.42, "elevationM": 516, "precipP90Mm": 36.0 },
+    "N-23": { "waterProb": 0.20, "ndwi": -0.07, "ndbi": 0.35, "elevationM": 540, "precipP90Mm": 25.0 },
+    "N-24": { "waterProb": 0.70, "ndwi": 0.29, "ndbi": 0.47, "elevationM": 484, "precipP90Mm": 43.0 }
+  }
+}

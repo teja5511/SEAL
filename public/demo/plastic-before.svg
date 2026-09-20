@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#090d12"/>
+      <stop offset="100%" stop-color="#141a23"/>
+    </linearGradient>
+    <linearGradient id="culvertConcrete" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1b222b"/>
+      <stop offset="50%" stop-color="#2a3442"/>
+      <stop offset="100%" stop-color="#1b222b"/>
+    </linearGradient>
+    <linearGradient id="murkyWater" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#192823"/>
+      <stop offset="100%" stop-color="#0d1915"/>
+    </linearGradient>
+    <linearGradient id="warningGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff5c5c"/>
+      <stop offset="100%" stop-color="#ffb020"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background / Sky & Embankment -->
+  <rect width="800" height="600" fill="url(#skyGrad)"/>
+  
+  <!-- Culvert Arch & Concrete Sluice -->
+  <path d="M 80 600 L 80 200 C 80 120, 220 70, 400 70 C 580 70, 720 120, 720 200 L 720 600 Z" fill="url(#culvertConcrete)" stroke="#3a4859" stroke-width="6"/>
+  <path d="M 140 600 L 140 230 C 140 160, 260 120, 400 120 C 540 120, 660 160, 660 230 L 660 600 Z" fill="#0c1015"/>
+
+  <!-- High-water Stagnant Murky Pool -->
+  <path d="M 140 370 Q 400 390 660 370 L 660 600 L 140 600 Z" fill="url(#murkyWater)"/>
+  
+  <!-- Concrete Cracks & Drainage Grate partially submerged -->
+  <g stroke="#3a4859" stroke-width="4" opacity="0.6">
+    <line x1="200" y1="220" x2="200" y2="480"/>
+    <line x1="280" y1="180" x2="280" y2="490"/>
+    <line x1="360" y1="160" x2="360" y2="500"/>
+    <line x1="440" y1="160" x2="440" y2="500"/>
+    <line x1="520" y1="180" x2="520" y2="490"/>
+    <line x1="600" y1="220" x2="600" y2="480"/>
+    <!-- Crossbars -->
+    <line x1="160" y1="260" x2="640" y2="260"/>
+    <line x1="150" y1="340" x2="650" y2="340"/>
+  </g>
+
+  <!-- Massive Floating Plastic Choke -->
+  <!-- Plastic Bottles -->
+  <g id="bottles" fill="#4fe0b6" opacity="0.85">
+    <rect x="230" y="380" width="36" height="16" rx="4" transform="rotate(-15 230 380)"/>
+    <rect x="222" y="383" width="8" height="10" rx="1" transform="rotate(-15 230 380)"/>
+    
+    <rect x="310" y="420" width="44" height="18" rx="4" transform="rotate(25 310 420)"/>
+    <rect x="302" y="424" width="8" height="10" rx="1" transform="rotate(25 310 420)"/>
+
+    <rect x="420" y="390" width="40" height="17" rx="4" transform="rotate(-8 420 390)"/>
+    <rect x="458" y="393" width="8" height="10" rx="1" transform="rotate(-8 420 390)"/>
+
+    <rect x="530" y="430" width="42" height="18" rx="4" transform="rotate(40 530 430)"/>
+    <rect x="522" y="434" width="8" height="10" rx="1" transform="rotate(40 530 430)"/>
+    
+    <rect x="380" y="460" width="45" height="19" rx="4" transform="rotate(-30 380 460)"/>
+    <rect x="372" y="464" width="8" height="11" rx="1" transform="rotate(-30 380 460)"/>
+  </g>
+
+  <!-- Blue and White Polythene Bags & Wrappers -->
+  <path d="M 270 410 C 290 380, 360 390, 340 430 C 320 470, 250 440, 270 410 Z" fill="#3b82f6" opacity="0.75"/>
+  <path d="M 450 420 C 490 390, 560 410, 530 460 C 500 500, 420 460, 450 420 Z" fill="#f59e0b" opacity="0.8"/>
+  <path d="M 330 460 C 370 430, 470 450, 440 510 C 400 560, 300 520, 330 460 Z" fill="#ec4899" opacity="0.7"/>
+  <path d="M 180 440 C 230 410, 260 470, 220 500 C 170 520, 150 460, 180 440 Z" fill="#e2e8f0" opacity="0.75"/>
+  <path d="M 490 480 C 540 450, 620 480, 580 540 C 530 570, 470 530, 490 480 Z" fill="#06b6d4" opacity="0.75"/>
+
+  <!-- Water Scum / Silt rings -->
+  <ellipse cx="400" cy="510" rx="220" ry="25" fill="#1e3a2b" opacity="0.7"/>
+
+  <!-- Telemetry HUD Overlay -->
+  <rect x="30" y="30" width="310" height="90" rx="8" fill="#07080a" fill-opacity="0.9" stroke="#ff5c5c" stroke-width="2"/>
+  <circle cx="55" cy="60" r="10" fill="#ff5c5c" filter="url(#glow)"/>
+  <text x="75" y="58" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold">CLOG: 86% · PLASTIC</text>
+  <text x="75" y="80" fill="#8b97a8" font-family="monospace" font-size="13">N-01 MOOSARAMBAGH NALA</text>
+  <text x="75" y="102" fill="#ffb020" font-family="monospace" font-size="12">STATUS: DISPATCH REQUIRED</text>
+  
+  <!-- Stamp -->
+  <rect x="570" y="30" width="200" height="40" rx="6" fill="#1c232c" stroke="#ff5c5c" stroke-width="1.5"/>
+  <text x="670" y="55" fill="#ff5c5c" font-family="monospace" font-size="14" font-weight="bold" text-anchor="middle">BEFORE AUDIT</text>
+</svg>
