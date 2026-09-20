@@ -203,9 +203,13 @@ function RowAction({ nala, onDispatch }: { nala: RankedNala; onDispatch?: (id: s
   }
   if (nala.status === "dispatched") {
     return (
-      <span className="inline-flex rounded-md border border-line px-2 py-1 font-mono text-[10px] uppercase text-mute">
+      <a
+        href="/crew"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex rounded-md border border-line px-2 py-1 font-mono text-[10px] uppercase text-mute hover:border-teal/40 hover:text-teal"
+      >
         En route
-      </span>
+      </a>
     );
   }
   const urgent = nala.alert === "RED";

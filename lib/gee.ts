@@ -61,12 +61,25 @@ let eeClient: EarthEngine | null = null;
 let liveSnapshotCache: { at: number; value: WeatherNextSnapshot } | null = null;
 
 export function isGeeConfigured(): boolean {
-  return Boolean(process.env.EE_PROJECT && process.env.EE_PRIVATE_KEY_JSON);
+  if (typeof window !== "undefined") return false;
+  const project = process.env.EE_PROJECT;
+  const key = process.env.EE_PRIVATE_KEY_JSON;
+  return Boolean(project && project.trim() && key && key.trim());
 }
 
 function cachedWeatherFallback(): WeatherNextSnapshot {
-  const fallback = geeCache.weathernext3 as WeatherNextSnapshot;
-  return { ...fallback, source: "gee-cache" };
+  const fallback = (geeCache as { weathernext3?: Partial<WeatherNextSnapshot> })?.weathernext3;
+  return {
+    source: "gee-cache",
+    assetId: fallback?.assetId ?? WEATHERNEXT_0P1_ASSET,
+    initTime: fallback?.initTime ?? "2026-09-20T12:00:00Z",
+    precipMeanMm: fallback?.precipMeanMm ?? 28.4,
+    precipP90Mm: fallback?.precipP90Mm ?? 41.2,
+    tempC: fallback?.tempC ?? 29.8,
+    dewC: fallback?.dewC ?? 25.2,
+    humidity: fallback?.humidity ?? 76,
+    windMs: fallback?.windMs ?? 3.2,
+  };
 }
 
 function round1(n: number): number {
@@ -136,20 +149,26 @@ function evaluate<T>(obj: { evaluate: (cb: (value: T | undefined, error?: Error 
  * Gracefully falls back to cache without crashing if keys are missing or invalid.
  */
 async function initEarthEngine(): Promise<boolean> {
+  if (typeof window !== "undefined") return false;
   if (eeInitialized && eeClient) return true;
   if (eeInitError) return false;
 
   const project = process.env.EE_PROJECT;
   const privateKeyRaw = process.env.EE_PRIVATE_KEY_JSON;
 
-  if (!project || !privateKeyRaw) {
+  if (!project || !project.trim() || !privateKeyRaw || !privateKeyRaw.trim()) {
     return false;
   }
 
   try {
-    // Dynamic import to prevent client bundle evaluation
+    // Dynamic import to prevent client bundle evaluation (Node-only)
     const mod = await import("@google/earthengine");
     const ee = ((mod as { default?: EarthEngine }).default ?? mod) as unknown as EarthEngine;
+
+    if (!ee || !ee.data || typeof ee.data.authenticateViaPrivateKey !== "function") {
+      eeInitError = new Error("Earth Engine SDK unavailable or missing authenticateViaPrivateKey");
+      return false;
+    }
 
     let privateKeyJson: EEPrivateKey;
     try {
@@ -164,9 +183,16 @@ async function initEarthEngine(): Promise<boolean> {
       ee.data.authenticateViaPrivateKey(
         privateKeyJson,
         () => {
-          ee.initialize(null, null, () => resolve(), (err: Error) => reject(new Error(String(err))), null, project);
+          ee.initialize(
+            null,
+            null,
+            () => resolve(),
+            (err: unknown) => reject(err instanceof Error ? err : new Error(String(err))),
+            null,
+            project
+          );
         },
-        (err: Error) => reject(new Error(String(err)))
+        (err: unknown) => reject(err instanceof Error ? err : new Error(String(err)))
       );
     });
 
@@ -318,12 +344,12 @@ export async function getNalaTelemetry(nalaId: string): Promise<NalaTelemetry> {
     precipP90Mm: 35.0,
   };
 
-  const hasEE = await initEarthEngine();
-  if (!hasEE) {
-    return fallback;
-  }
-
   try {
+    const hasEE = await initEarthEngine();
+    if (!hasEE) {
+      return fallback;
+    }
+
     const wn = await getWeatherNextData();
     if (wn.source !== "weathernext3") {
       return fallback;
@@ -347,12 +373,12 @@ export async function getWeatherNextData(): Promise<WeatherNextSnapshot> {
     return liveSnapshotCache.value;
   }
 
-  const hasEE = await initEarthEngine();
-  if (!hasEE) {
-    return fallback;
-  }
-
   try {
+    const hasEE = await initEarthEngine();
+    if (!hasEE) {
+      return fallback;
+    }
+
     const snapshot = await queryWeatherNext3();
     liveSnapshotCache = { at: Date.now(), value: snapshot };
     return snapshot;

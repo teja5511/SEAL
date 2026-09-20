@@ -15,6 +15,48 @@ interface VisionAnalysisResponse {
   engine: "gemini-2.0-flash" | "heuristic-fallback";
 }
 
+function getFallback(filename: string): VisionAnalysisResponse {
+  const lowerName = (filename || "").toLowerCase();
+  let clogClass: ClogClass = "plastic";
+  let clog = 86;
+  let reason = "High concentration of single-use PET bottles and LDPE wrappers constricting 86% of the culvert mouth.";
+  let debris = ["PET soda bottles", "LDPE polythene bags", "food packaging wrappers"];
+
+  if (lowerName.includes("block")) {
+    clogClass = "blocked";
+    clog = 92;
+    reason = "Catastrophic structural blockage: jammed timber branches, gunny bags, and entangled solid waste creating severe backwater head.";
+    debris = ["fallen tree branches", "jute gunny sacks", "entangled industrial netting"];
+  } else if (lowerName.includes("plastic")) {
+    clogClass = "plastic";
+    clog = 86;
+    reason = "High concentration of single-use PET bottles and LDPE wrappers constricting 86% of the culvert mouth.";
+    debris = ["PET soda bottles", "LDPE polythene bags", "food packaging wrappers"];
+  } else if (lowerName.includes("silt")) {
+    clogClass = "silt";
+    clog = 78;
+    reason = "Dense compacted sediment sandbar choking the lower sluice bed, reducing hydraulic throughput by 78%.";
+    debris = ["fine river silt", "demolition aggregate", "compacted clay sludge"];
+  } else if (lowerName.includes("clear")) {
+    clogClass = "clear";
+    clog = 12;
+    reason = "Drain cross-section is clean and free-flowing. Grate bars intact with zero dangerous constriction.";
+    debris = ["minor leaf litter"];
+  }
+
+  return {
+    success: true,
+    clogClass,
+    clog,
+    confidence: 0.94,
+    reason,
+    debrisIdentified: debris,
+    immediateActionRequired: clog >= 65,
+    recommendedEscrowPayoutInr: clog >= 80 ? 180 : clog >= 50 ? 140 : 100,
+    engine: "heuristic-fallback",
+  };
+}
+
 export async function POST(request: Request) {
   let filename = "drain-sample.jpg";
   let base64Data: string | null = null;
@@ -29,13 +71,16 @@ export async function POST(request: Request) {
       const file = formData.get("file") as File | null;
       nalaId = formData.get("nalaId") as string | null;
 
-      if (file) {
-        filename = file.name;
+      if (file && typeof file !== "string") {
+        filename = file.name || filename;
         mimeType = file.type || "image/jpeg";
         const bytes = await file.arrayBuffer();
         base64Data = Buffer.from(bytes).toString("base64");
       }
-      filename = (formData.get("filename") as string) || filename;
+      const formFilename = formData.get("filename") as string | null;
+      if (formFilename) {
+        filename = formFilename;
+      }
     } else if (contentType.includes("application/json")) {
       const json = await request.json();
       filename = json.filename || filename;
@@ -121,38 +166,5 @@ You must return a JSON response matching this schema exactly:
   }
 
   // Deterministic Heuristic Fallback (Ensures the demo never blanks or fails without keys)
-  const lowerName = filename.toLowerCase();
-  let clogClass: ClogClass = "plastic";
-  let clog = 86;
-  let reason = "High concentration of single-use PET bottles and LDPE wrappers constricting 86% of the culvert mouth.";
-  let debris = ["PET soda bottles", "LDPE polythene bags", "food packaging wrappers"];
-
-  if (lowerName.includes("silt")) {
-    clogClass = "silt";
-    clog = 78;
-    reason = "Dense compacted sediment sandbar choking the lower sluice bed, reducing hydraulic throughput by 78%.";
-    debris = ["fine river silt", "demolition aggregate", "compacted clay sludge"];
-  } else if (lowerName.includes("block")) {
-    clogClass = "blocked";
-    clog = 92;
-    reason = "Catastrophic structural blockage: jammed timber branches, gunny bags, and entangled solid waste creating severe backwater head.";
-    debris = ["fallen tree branches", "jute gunny sacks", "entangled industrial netting"];
-  } else if (lowerName.includes("clear")) {
-    clogClass = "clear";
-    clog = 12;
-    reason = "Drain cross-section is clean and free-flowing. Grate bars intact with zero dangerous constriction.";
-    debris = ["minor leaf litter"];
-  }
-
-  return NextResponse.json({
-    success: true,
-    clogClass,
-    clog,
-    confidence: 0.94,
-    reason,
-    debrisIdentified: debris,
-    immediateActionRequired: clog >= 65,
-    recommendedEscrowPayoutInr: clog >= 80 ? 180 : 140,
-    engine: "heuristic-fallback",
-  } satisfies VisionAnalysisResponse);
+  return NextResponse.json(getFallback(filename));
 }

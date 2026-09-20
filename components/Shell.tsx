@@ -191,13 +191,13 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line/80 bg-ink/90 px-3 py-2 backdrop-blur-2xl lg:hidden"
       >
         <div className="flex items-center rounded-full border border-line bg-panel/85 p-1">
-          {links.slice(0, 4).map((l) => {
+          {links.map((l) => {
             const active = path === l.href;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`relative z-10 flex-1 rounded-full px-2 py-1.5 text-center text-[13px] ${
+                className={`relative z-10 flex-1 rounded-full px-1 py-1.5 text-center text-[11px] sm:px-2 sm:text-[13px] ${
                   active ? "font-semibold text-ink" : "text-mute"
                 }`}
               >

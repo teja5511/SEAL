@@ -75,7 +75,7 @@ export function ReplayClock(props: ReplayClockProps) {
                     active ? "font-bold text-teal" : "text-mute hover:text-paper"
                   }`}
                 >
-                  {beat.hour === 0 ? "0h" : `${beat.hour}h`}
+                  {beat.hour === 0 ? "T–0" : `T–${Math.abs(beat.hour)}`}
                 </button>
               </div>
             );

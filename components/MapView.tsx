@@ -5,7 +5,8 @@ import Map, { Marker, Popup, NavigationControl, MapRef } from "react-map-gl/mapl
 import type { StyleSpecification } from "maplibre-gl";
 import type { MapLayer, MapVisible, RankedNala } from "@/lib/types";
 import { floodDepthIfUnsealed } from "@/lib/rank";
-import { OPEN_FREE_MAP_DARK, INK_FALLBACK_STYLE } from "@/lib/map-style";
+import { OPEN_FREE_MAP_DARK, INK_FALLBACK_STYLE, applySealOpsPaint } from "@/lib/map-style";
+import { AlertMark } from "@/components/AlertMark";
 import { LocalCaption } from "./LocaleContext";
 
 interface MapViewProps {
@@ -19,27 +20,21 @@ interface MapViewProps {
   visible?: MapVisible;
 }
 
-const DEFAULT_MAP_STYLE = process.env.NEXT_PUBLIC_MAP_STYLE || OPEN_FREE_MAP_DARK;
+const DEFAULT_MAP_STYLE: string | StyleSpecification = process.env.NEXT_PUBLIC_MAP_STYLE || OPEN_FREE_MAP_DARK;
 const DEFAULT_VISIBLE: MapVisible = { RED: true, YELLOW: true, WATCH: true, sealed: true };
 
-function pinFill(nala: RankedNala, layer: MapLayer) {
+function pinColor(nala: RankedNala, layer: MapLayer) {
   if (nala.status === "verified") return "#2ee6c5";
-  if (nala.status === "held") return "#ff4d62";
-  if (layer === "wbgt") return "#3d5566";
+  if (nala.status === "held") return "#ff5c5c";
+  if (layer === "wbgt") return "#5a6b78";
   if (layer === "rainfall") {
-    if (nala.precipP90Mm >= 36) return "#ff4d62";
+    if (nala.precipP90Mm >= 36) return "#ff5c5c";
     if (nala.precipP90Mm >= 20) return "#7ad4ff";
     return "#2ee6c5";
   }
-  if (nala.alert === "RED") return "#ff4d62";
+  if (nala.alert === "RED") return "#ff5c5c";
   if (nala.alert === "YELLOW") return "#ffb020";
   return "#2ee6c5";
-}
-
-function shortPlace(n: RankedNala) {
-  if (n.nameEn.includes(" at ")) return n.nameEn.split(" at ").pop() as string;
-  if (n.nameEn.includes(" near ")) return n.nameEn.split(" near ").pop() as string;
-  return n.ward;
 }
 
 export function MapView({
@@ -57,6 +52,7 @@ export function MapView({
   const [mapReady, setMapReady] = useState(false);
   const [mapStyle, setMapStyle] = useState<string | StyleSpecification>(DEFAULT_MAP_STYLE);
   const fellBack = useRef(false);
+  const lastFlownId = useRef<string | null>(null);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -77,10 +73,23 @@ export function MapView({
   useEffect(() => {
     if (!mapReady || !selectedNala) return;
     setActivePopup(selectedNala);
-    mapRef.current?.flyTo({
+    if (lastFlownId.current === selectedNala.id) return;
+    const first = lastFlownId.current === null;
+    lastFlownId.current = selectedNala.id;
+    if (first) return;
+
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    const center = map.getCenter();
+    const dx = center.lng - selectedNala.lng;
+    const dy = center.lat - selectedNala.lat;
+    if (dx * dx + dy * dy < 0.015 * 0.015) return;
+
+    map.easeTo({
       center: [selectedNala.lng, selectedNala.lat],
-      zoom: 13,
-      duration: 900,
+      zoom: Math.max(map.getZoom(), 12.6),
+      duration: 400,
     });
   }, [selectedNala, mapReady]);
 
@@ -101,7 +110,12 @@ export function MapView({
 
   const handleLoad = useCallback(() => {
     setMapReady(true);
-    mapRef.current?.getMap()?.resize();
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    applySealOpsPaint(map);
+    map.resize();
+    requestAnimationFrame(() => map.resize());
+    window.setTimeout(() => map.resize(), 250);
   }, []);
 
   const handleError = useCallback(() => {
@@ -117,12 +131,13 @@ export function MapView({
         initialViewState={{
           longitude: 78.4867,
           latitude: 17.385,
-          zoom: 11.2,
+          zoom: 11.8,
         }}
         mapStyle={mapStyle}
         style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
         attributionControl={false}
         dragRotate={false}
+        fadeDuration={0}
         onLoad={handleLoad}
         onError={handleError}
       >
@@ -132,19 +147,37 @@ export function MapView({
           const isSelected = selectedNala?.id === nala.id;
           const isSealed = nala.status === "verified";
           const floodDepth = floodDepthIfUnsealed(nala, isSealed);
-          const color = pinFill(nala, layer);
-          const scale = layer === "rainfall" ? Math.min(1.45, 0.85 + nala.precipP90Mm / 80) : 1;
+          const color = pinColor(nala, layer);
 
           return (
             <React.Fragment key={nala.id}>
+              {layer === "rainfall" && (
+                <Marker longitude={nala.lng} latitude={nala.lat} anchor="center">
+                  <div
+                    className="pointer-events-none rounded-full border border-lagoon/40 bg-lagoon/15"
+                    style={{
+                      width: `${Math.min(72, 18 + nala.precipP90Mm)}px`,
+                      height: `${Math.min(72, 18 + nala.precipP90Mm)}px`,
+                    }}
+                  />
+                </Marker>
+              )}
+
               {(splitView || hour === 0) && !isSealed && nala.alert === "RED" && (
                 <Marker longitude={nala.lng} latitude={nala.lat} anchor="center">
                   <div className="pointer-events-none relative flex items-center justify-center" data-testid="flood-aura">
                     <div
-                      className="absolute rounded-full border border-danger/80 bg-danger/20"
+                      className="pointer-events-none absolute rounded-full border-2 border-danger/80 bg-danger/20"
                       style={{
-                        width: `${Math.min(88, Math.max(36, (floodDepth || 1) * 40))}px`,
-                        height: `${Math.min(88, Math.max(36, (floodDepth || 1) * 40))}px`,
+                        width: `${Math.min(100, Math.max(40, (floodDepth || 1) * 45))}px`,
+                        height: `${Math.min(100, Math.max(40, (floodDepth || 1) * 45))}px`,
+                      }}
+                    />
+                    <div
+                      className="pointer-events-none animate-pulse rounded-full border border-danger bg-danger/30 shadow-[0_0_24px_rgba(255,92,92,0.85)]"
+                      style={{
+                        width: `${Math.min(80, Math.max(30, (floodDepth || 1) * 35))}px`,
+                        height: `${Math.min(80, Math.max(30, (floodDepth || 1) * 35))}px`,
                       }}
                     />
                   </div>
@@ -153,7 +186,9 @@ export function MapView({
 
               {(splitView || hour === 0) && isSealed && (
                 <Marker longitude={nala.lng} latitude={nala.lat} anchor="center">
-                  <div className="pointer-events-none h-10 w-10 rounded-full border border-teal/70 bg-teal/15" data-testid="teal-shield" />
+                  <div className="pointer-events-none relative flex items-center justify-center" data-testid="teal-shield">
+                    <div className="pointer-events-none h-14 w-14 animate-pulse rounded-full border-2 border-teal bg-teal/20 shadow-[0_0_18px_rgba(46,230,197,0.75)]" />
+                  </div>
                 </Marker>
               )}
 
@@ -167,9 +202,44 @@ export function MapView({
                   setActivePopup(nala);
                 }}
               >
-                <button type="button" className="group cursor-pointer" style={{ transform: `scale(${isSelected ? scale * 1.15 : scale})` }} aria-label={`${nala.id} ${nala.nameEn}`}>
-                  <DropPin color={color} selected={isSelected} pulse={nala.alert === "RED" && !isSealed} />
-                </button>
+                <div className="group flex cursor-pointer flex-col items-center">
+                  <div
+                    className={`mb-1 rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-tighter shadow-sm ${
+                      isSealed
+                        ? "bg-teal text-ink ring-1 ring-teal/50"
+                        : nala.status === "held"
+                          ? "animate-pulse bg-danger text-white"
+                          : nala.status === "dispatched"
+                            ? "bg-amber text-ink"
+                            : nala.alert === "RED"
+                              ? "bg-danger/90 text-white"
+                              : "border border-line bg-ink text-mute"
+                    }`}
+                  >
+                    {isSealed ? "✓ SEALED · LEDGER" : nala.status === "held" ? "HOLD" : nala.id}
+                  </div>
+
+                  <div className="relative flex items-center justify-center">
+                    {isSelected && nala.alert === "RED" && !isSealed && (
+                      <span
+                        className="absolute inline-flex h-6 w-6 animate-ping rounded-full opacity-60"
+                        style={{ backgroundColor: color }}
+                      />
+                    )}
+                    <div
+                      className={`grid h-5 w-5 place-items-center border-2 border-ink bg-ink/80 shadow-lg transition-transform ${
+                        isSelected ? "scale-125 ring-2 ring-teal" : "group-hover:scale-110"
+                      }`}
+                    >
+                      <AlertMark
+                        alert={nala.alert}
+                        sealed={isSealed}
+                        held={nala.status === "held"}
+                        size="md"
+                      />
+                    </div>
+                  </div>
+                </div>
               </Marker>
             </React.Fragment>
           );
@@ -179,77 +249,119 @@ export function MapView({
           <Popup
             longitude={activePopup.lng}
             latitude={activePopup.lat}
-            anchor="bottom"
+            anchor="top"
             closeOnClick={false}
             onClose={() => setActivePopup(null)}
-            offset={36}
+            className="z-50"
           >
-            <div className="min-w-[148px] font-sans text-paper">
-              <div className="font-mono text-[10px] text-mute">{activePopup.id}</div>
-              <div className="text-[13px] font-semibold leading-tight">{shortPlace(activePopup)}</div>
-              <LocalCaption text={activePopup.nameTe} className="text-[10px] text-mute" />
-              <div className="mt-1 font-mono text-[12px] font-bold text-danger">Risk {activePopup.risk}</div>
+            <div className="min-w-[240px] max-w-[300px] font-mono text-xs text-white">
+              <div className="mb-1.5 flex items-center justify-between border-b border-line pb-1.5">
+                <span className="font-bold text-teal">
+                  {activePopup.id} · {activePopup.ward}
+                </span>
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                    activePopup.alert === "RED"
+                      ? "border border-danger/40 bg-danger/20 text-danger"
+                      : activePopup.alert === "YELLOW"
+                        ? "border border-amber/40 bg-amber/20 text-amber"
+                        : "border border-teal/40 bg-teal/20 text-teal"
+                  }`}
+                >
+                  {activePopup.alert}
+                </span>
+              </div>
+
+              <div className="font-sans text-sm font-semibold text-white">{activePopup.nameEn}</div>
+              <LocalCaption text={activePopup.nameTe} className="font-sans text-[11px] text-mute" />
+
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-line/60 pt-2 text-[11px]">
+                <div>
+                  <span className="text-mute">Clog:</span>{" "}
+                  <span className="font-bold text-white">{activePopup.clog}%</span> ({activePopup.clogClass})
+                </div>
+                <div>
+                  <span className="text-mute">Risk Score:</span>{" "}
+                  <span className="font-bold text-teal">{activePopup.risk}</span>
+                </div>
+                <div>
+                  <span className="text-mute">Households:</span>{" "}
+                  <span className="font-bold text-white">{activePopup.households.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-mute">Water Prob:</span>{" "}
+                  <span className="font-bold text-white">{Math.round(activePopup.waterProb * 100)}%</span>
+                </div>
+              </div>
+
+              <div className="mt-2.5 flex items-center justify-between border-t border-line pt-2">
+                <span className="text-[10px] font-bold uppercase text-mute">
+                  Crew: <span className="text-white">{activePopup.crew}</span>
+                </span>
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                    activePopup.status === "verified"
+                      ? "bg-teal/20 text-teal"
+                      : activePopup.status === "held"
+                        ? "bg-danger/20 text-danger"
+                        : "bg-panel text-mute"
+                  }`}
+                >
+                  {activePopup.status}
+                </span>
+              </div>
+
+              {activePopup.status === "verified" ? (
+                <div className="mt-2 space-y-1 rounded border border-teal/40 bg-teal/15 p-2 text-[11px] leading-tight text-teal">
+                  <div className="flex items-center justify-between font-bold">
+                    <span>✓ SEALED (0.0m flood)</span>
+                    <span className="text-amber">₹{activePopup.payInr}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-teal/30 pt-1">
+                    <span className="text-[10px] text-white/80">Proof verified</span>
+                    <a href="/ledger" className="text-[10px] font-bold text-teal underline hover:text-white">
+                      LEDGER PROOF →
+                    </a>
+                  </div>
+                </div>
+              ) : splitView || hour === 0 ? (
+                <div className="mt-2 rounded border border-danger/40 bg-danger/20 p-1.5 text-[10px] leading-tight text-danger">
+                  Unsealed: {activePopup.historyFloodM}m flood depth. {activePopup.households.toLocaleString()} homes inundated.
+                </div>
+              ) : null}
             </div>
           </Popup>
         )}
       </Map>
 
-      <div className="pointer-events-none absolute inset-0 map-vignette" />
-
-      <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex flex-col gap-2">
-        {layer !== "wbgt" && (
-          <div className="rounded-lg border border-line/80 bg-panel/90 px-2.5 py-2 backdrop-blur">
-            <p className="mb-1 font-mono text-[9px] uppercase tracking-wider text-mute">Rainfall Nowcast (mm)</p>
-            <div className="h-2 w-40 overflow-hidden rounded-full bg-gradient-to-r from-[#1b3a4a] via-[#2ee6c5] via-40% to-[#ff4d62]" />
-            <div className="mt-1 flex justify-between font-mono text-[8px] text-mute">
-              <span>0</span>
-              <span>10</span>
-              <span>25</span>
-              <span>50</span>
-              <span>100+</span>
-            </div>
-          </div>
-        )}
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line/80 bg-panel/90 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-wider text-mute backdrop-blur">
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-danger" /> High Risk
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-amber" /> Watch
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-teal" /> Cleared
-          </span>
-        </div>
-        <div className="w-36 font-mono text-[8px] text-mute">
-          <div className="h-px bg-mute/50" />
-          <div className="mt-0.5 flex justify-between">
-            <span>0</span>
-            <span>2.5</span>
-            <span>5 km</span>
-          </div>
-        </div>
+      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-panel/90 px-3 py-1.5 font-mono text-[10px] text-mute backdrop-blur md:flex">
+        <span className="relative flex h-3 w-3 items-center justify-center overflow-hidden rounded-full border border-teal">
+          <span className="absolute h-px w-full origin-center bg-teal animate-radar" />
+        </span>
+        <span>Hyderabad basin · © OSM · OpenFreeMap</span>
+        <span className="text-line">|</span>
+        <span className="inline-flex items-center gap-1">
+          <AlertMark alert="RED" /> RED diamond
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <AlertMark alert="YELLOW" /> YELLOW triangle
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <AlertMark alert="WATCH" /> WATCH circle
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <AlertMark alert="WATCH" sealed /> SEALED
+        </span>
       </div>
+
+      {(splitView || hour === 0) && (
+        <div className="pointer-events-none absolute bottom-14 left-1/2 z-10 -translate-x-1/2 rounded-full border border-teal/40 bg-panel/95 px-4 py-1.5 font-mono text-[11px] text-paper shadow-hud backdrop-blur">
+          T–0 split · teal sealed (0 m) · red unsealed flood
+        </div>
+      )}
     </div>
   );
 }
 
-function DropPin({ color, selected, pulse }: { color: string; selected: boolean; pulse: boolean }) {
-  return (
-    <span className="relative block h-9 w-7">
-      {pulse && (
-        <span className="absolute left-1/2 top-2 h-4 w-4 -translate-x-1/2 rounded-full opacity-50" style={{ backgroundColor: color }} />
-      )}
-      <svg viewBox="0 0 28 36" className={`h-9 w-7 drop-shadow ${selected ? "ring-0" : ""}`} aria-hidden>
-        <path
-          d="M14 1.2c-6.4 0-11.6 5-11.6 11.2 0 8.4 11.6 22 11.6 22s11.6-13.6 11.6-22C25.6 6.2 20.4 1.2 14 1.2z"
-          fill={color}
-          stroke="#061018"
-          strokeWidth="1.4"
-        />
-        <circle cx="14" cy="12.2" r="4.1" fill="#061018" fillOpacity="0.55" />
-        {selected && <circle cx="14" cy="12.2" r="2.1" fill="#e8eef6" />}
-      </svg>
-    </span>
-  );
-}
+export default MapView;
+

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { applyLiveWeather, buildState } from "@/lib/store";
 import type { AppState, MapLayer, RankedNala } from "@/lib/types";
@@ -11,35 +11,66 @@ import { HeatGuardCard } from "@/components/HeatGuardCard";
 import { ConditionsCard } from "@/components/ConditionsCard";
 import { useDrainCopy } from "@/components/LocaleContext";
 
+const INITIAL_HOUR = -4;
+
+let initialCommandState: AppState | undefined;
+
+function getInitialCommandState(): AppState {
+  if (!initialCommandState) initialCommandState = buildState(INITIAL_HOUR, false);
+  return initialCommandState;
+}
+
+function nalaSnapshotEqual(a: RankedNala, b: RankedNala): boolean {
+  return (
+    a.id === b.id &&
+    a.status === b.status &&
+    a.risk === b.risk &&
+    a.alert === b.alert &&
+    a.forecastMm === b.forecastMm &&
+    a.precipP90Mm === b.precipP90Mm &&
+    a.reason === b.reason &&
+    a.waterProb === b.waterProb &&
+    a.clog === b.clog
+  );
+}
+
+function pickSelectedNala(nalas: RankedNala[], current: RankedNala | null): RankedNala | null {
+  if (!nalas.length) return null;
+  if (!current) return nalas[0];
+  const refreshed = nalas.find((n) => n.id === current.id);
+  const next = refreshed ?? nalas[0];
+  if (current.id === next.id && nalaSnapshotEqual(current, next)) return current;
+  return next;
+}
+
 export default function CommandPage() {
   const { drains } = useDrainCopy();
-  const [hour, setHour] = useState<number>(-4);
+  const initialState = getInitialCommandState();
+  const [hour, setHour] = useState<number>(INITIAL_HOUR);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [liveWeather, setLiveWeather] = useState<boolean>(false);
-  const [appState, setAppState] = useState<AppState>(() => buildState(-4, false));
-  const [selectedNala, setSelectedNala] = useState<RankedNala | null>(() => buildState(-4, false).nalas[0] ?? null);
+  const [appState, setAppState] = useState<AppState>(initialState);
+  const [selectedNala, setSelectedNala] = useState<RankedNala | null>(initialState.nalas[0] ?? null);
   const [query, setQuery] = useState("");
   const [layer, setLayer] = useState<MapLayer>("risk");
   const [layersOpen, setLayersOpen] = useState(false);
   const [visible, setVisible] = useState({ RED: true, YELLOW: true, WATCH: true, sealed: true });
-  const selectedNalaRef = useRef<RankedNala | null>(selectedNala);
+  const skipHourSyncRef = useRef(true);
 
-  useEffect(() => {
-    selectedNalaRef.current = selectedNala;
-  }, [selectedNala]);
+  const syncSelectedFromNalas = useCallback((nalas: RankedNala[]) => {
+    setSelectedNala((prev) => pickSelectedNala(nalas, prev));
+  }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (liveWeather) return;
+    if (skipHourSyncRef.current) {
+      skipHourSyncRef.current = false;
+      return;
+    }
     const nextState = buildState(hour, false);
     setAppState(nextState);
-    const curr = selectedNalaRef.current;
-    if (!curr || !nextState.nalas.some((n) => n.id === curr.id)) {
-      setSelectedNala(nextState.nalas[0] ?? null);
-    } else {
-      const refreshed = nextState.nalas.find((n) => n.id === curr.id);
-      if (refreshed) setSelectedNala(refreshed);
-    }
-  }, [hour, liveWeather]);
+    syncSelectedFromNalas(nextState.nalas);
+  }, [hour, liveWeather, syncSelectedFromNalas]);
 
   const fetchLiveWeather = useCallback(async () => {
     try {
@@ -48,20 +79,14 @@ export default function CommandPage() {
         const weather = await res.json();
         setAppState((prev) => {
           const next = applyLiveWeather(prev, weather);
-          const curr = selectedNalaRef.current;
-          if (curr) {
-            const refreshed = next.nalas.find((n) => n.id === curr.id);
-            if (refreshed) setSelectedNala(refreshed);
-          } else {
-            setSelectedNala(next.nalas[0] ?? null);
-          }
+          syncSelectedFromNalas(next.nalas);
           return next;
         });
       }
     } catch (err) {
       console.warn("Error fetching live weather:", err);
     }
-  }, []);
+  }, [syncSelectedFromNalas]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -71,15 +96,6 @@ export default function CommandPage() {
         const i = order.indexOf(h);
         const nextH = i < 0 || i >= order.length - 1 ? 0 : order[i + 1];
         if (nextH === 0) setIsPlaying(false);
-        const nextState = buildState(nextH, false);
-        setAppState(nextState);
-        const curr = selectedNalaRef.current;
-        if (!curr || !nextState.nalas.some((n) => n.id === curr.id)) {
-          setSelectedNala(nextState.nalas[0] ?? null);
-        } else {
-          const refreshed = nextState.nalas.find((n) => n.id === curr.id);
-          if (refreshed) setSelectedNala(refreshed);
-        }
         return nextH;
       });
     }, 2400);
@@ -93,15 +109,6 @@ export default function CommandPage() {
       fetchLiveWeather();
     } else {
       setLiveWeather(false);
-      const restored = buildState(hour, false);
-      setAppState(restored);
-      const curr = selectedNalaRef.current;
-      if (!curr || !restored.nalas.some((n) => n.id === curr.id)) {
-        setSelectedNala(restored.nalas[0] ?? null);
-      } else {
-        const refreshed = restored.nalas.find((n) => n.id === curr.id);
-        if (refreshed) setSelectedNala(refreshed);
-      }
     }
   };
 
@@ -109,15 +116,6 @@ export default function CommandPage() {
     setLiveWeather(false);
     setIsPlaying(false);
     setHour(newHour);
-    const nextState = buildState(newHour, false);
-    setAppState(nextState);
-    const curr = selectedNalaRef.current;
-    if (!curr || !nextState.nalas.some((n) => n.id === curr.id)) {
-      setSelectedNala(nextState.nalas[0] ?? null);
-    } else {
-      const refreshed = nextState.nalas.find((n) => n.id === curr.id);
-      if (refreshed) setSelectedNala(refreshed);
-    }
   };
 
   const handleDispatchNala = (nalaId: string) => {
@@ -182,9 +180,9 @@ export default function CommandPage() {
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden lg:p-4">
-        <div className="flex min-h-0 min-w-0 flex-col gap-3">
-          <div className="relative min-h-[280px] flex-1 overflow-hidden rounded-2xl border border-line/80 bg-elevated lg:min-h-0">
+      <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-3 lg:h-full lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden lg:p-4">
+        <div className="flex min-h-0 min-w-0 flex-col gap-3 lg:h-full">
+          <div className="relative h-[min(58vh,640px)] min-h-[420px] overflow-hidden rounded-2xl border border-line/80 bg-elevated lg:h-auto lg:min-h-0 lg:flex-1">
             <div className="pointer-events-auto absolute left-3 top-3 z-20 flex flex-wrap items-center gap-2">
               <div className="flex rounded-lg border border-line bg-panel/90 p-0.5 text-[11px] backdrop-blur">
                 {(
@@ -250,6 +248,16 @@ export default function CommandPage() {
             {hour === 0 && (
               <div className="pointer-events-none absolute right-3 top-14 z-10 max-w-[14rem] rounded-lg border border-danger/40 bg-danger/15 px-2.5 py-2 font-mono text-[10px] text-paper">
                 T–0 split · sealed {drains} stay at 0 m · unsealed RED pins flood
+              </div>
+            )}
+            {layer === "rainfall" && hour !== 0 && (
+              <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-lagoon/30 bg-panel/90 px-2.5 py-1.5 font-mono text-[10px] text-mute">
+                Rainfall · halo size = p90 mm
+              </div>
+            )}
+            {layer === "wbgt" && (
+              <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-amber/30 bg-panel/90 px-2.5 py-1.5 font-mono text-[10px] text-mute">
+                WBGT · HeatGuard is city-wide; HOLD pins stay red
               </div>
             )}
           </div>

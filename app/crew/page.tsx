@@ -59,11 +59,6 @@ export default function CrewPage() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chats, busy]);
 
-  useEffect(() => {
-    if (!job) return;
-    setChats(seedChat(job, state.weather.wbgtC, drain));
-  }, [drain, activeId]); // omit job/status so after-photo threads are not wiped
-
   function loadJob(n: RankedNala) {
     setActiveId(n.id);
     setChats(seedChat(n, state.weather.wbgtC, drain));
@@ -172,6 +167,7 @@ export default function CrewPage() {
       </section>
 
       <PhoneFrame
+        key={job.id}
         crewName={job.crew}
         wardName={job.ward}
         timeString={CLOCK}

@@ -84,6 +84,23 @@ body::after {
 .maplibregl-canvas {
   width: 100% !important;
   height: 100% !important;
+  background: #061018 !important;
+}
+
+.maplibregl-canvas {
+  filter: saturate(0.72) brightness(0.9) contrast(1.08);
+}
+
+.maplibregl-canvas-container::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse at center, transparent 46%, rgba(6, 16, 24, 0.62) 100%),
+    radial-gradient(ellipse at 78% 12%, rgba(46, 230, 197, 0.09), transparent 42%),
+    radial-gradient(ellipse at 8% 88%, rgba(122, 212, 255, 0.07), transparent 50%);
 }
 
 .maplibregl-popup-content {
