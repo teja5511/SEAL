@@ -34,4 +34,5 @@ Waste reduction + flood resilience + informal livelihoods. Not a chatbot. Not a 
 
 ## Try it
 
-Live URL after `vercel` deploy. Repo: this folder. No live outdoor demo required.
+- **Live Web App:** [https://seal-five-sigma.vercel.app/](https://seal-five-sigma.vercel.app/)
+- **Repository:** Private GitHub repo `teja5511/SEAL`

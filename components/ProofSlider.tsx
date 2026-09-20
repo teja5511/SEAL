@@ -149,7 +149,7 @@ export function ProofSlider({
           value={sliderPosition}
           aria-label="Before and after proof slider"
           onChange={(e) => setSliderPosition(Number(e.target.value))}
-          className="h-2 min-w-0 w-full flex-1 cursor-pointer accent-teal"
+          className="h-3 min-w-0 w-full flex-1 cursor-pointer accent-teal"
         />
         <span className="font-mono text-[11px] font-bold text-teal">AFTER</span>
       </div>

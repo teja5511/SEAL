@@ -2,6 +2,8 @@
 
 **Seal the drain before the rain. Pay the crew only when the photo proves it.**
 
+🌐 **Live Web App:** [https://seal-five-sigma.vercel.app/](https://seal-five-sigma.vercel.app/)
+
 SEAL is a climate-dispatch app for urban monsoon flooding. Cities rarely flood because of rainfall alone. They flood because a **storm drain** is clogged with plastic and silt, and nobody is paid to clear it before the cloud arrives. (Hyderabad crews say **nala** — EN+TE mode keeps that word; English mode does not.)
 
 The product is a closed loop, not a dashboard:

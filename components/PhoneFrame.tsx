@@ -48,8 +48,9 @@ export function PhoneFrame({
         <div className="z-30 flex h-14 items-center justify-between border-b border-[#2a3942] bg-[#1f2c34] px-2.5 shadow-md">
           <div className="flex min-w-0 items-center gap-2">
             <span className="px-0.5 text-lg leading-none text-[#00a884]">‹</span>
-            <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#00a884] text-sm font-bold text-white">
-              S
+            <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-[#00a884]/40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/seal-icon.jpg" alt="" className="h-full w-full object-cover" />
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#2ee6c5] ring-2 ring-[#1f2c34]" />
             </div>
             <div className="min-w-0 leading-tight">

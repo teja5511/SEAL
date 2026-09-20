@@ -5,7 +5,9 @@ import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { LocaleProvider, useDrainCopy, useLocale } from "./LocaleContext";
+import { OpsProvider, useOps } from "./OpsContext";
 import { SealMark } from "./SealMark";
+import { applyOps } from "@/lib/ops";
 import { buildState, ledgerStats } from "@/lib/store";
 
 const links = [
@@ -21,7 +23,9 @@ const spring = { type: "spring" as const, stiffness: 420, damping: 34, mass: 0.7
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <LocaleProvider>
-      <ShellInner>{children}</ShellInner>
+      <OpsProvider>
+        <ShellInner>{children}</ShellInner>
+      </OpsProvider>
     </LocaleProvider>
   );
 }
@@ -30,12 +34,13 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const { mode, setMode } = useLocale();
   const { glossary } = useDrainCopy();
+  const { ops } = useOps();
   const [drawer, setDrawer] = useState(false);
   const isCommand = path === "/";
 
   const briefing = useMemo(() => {
-    const snap = buildState(-4);
-    const stats = ledgerStats(buildState(0));
+    const snap = applyOps(buildState(-4), ops);
+    const stats = ledgerStats(applyOps(buildState(0), ops));
     const moving = snap.nalas.filter((n) => n.status === "dispatched" || n.status === "held");
     return {
       monitored: snap.nalas.length,
@@ -43,7 +48,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       verified: stats.jobs,
       households: stats.householdsSaved || snap.nalas.reduce((s, n) => s + n.households, 0),
     };
-  }, []);
+  }, [ops]);
 
   return (
     <div className="flex h-dvh overflow-hidden bg-ink">
@@ -62,11 +67,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           drawer ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-2.5 px-4 py-4">
-          <SealMark className="h-10 w-10 shadow-glow" />
+        <div className="flex items-center gap-3 px-4 py-5">
+          <SealMark className="h-12 w-12 shadow-glow" />
           <div className="min-w-0">
-            <div className="font-display text-[17px] font-bold leading-none tracking-tight">SEAL</div>
-            <div className="mt-1 text-[10px] leading-tight text-mute">
+            <div className="wordmark">SEAL</div>
+            <div className="mt-1.5 text-[10px] leading-tight text-mute">
               Storm Emergency
               <br />
               Action Ledger
@@ -175,13 +180,15 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             Menu
           </button>
           <Link href="/" className="flex items-center gap-2">
-            <SealMark className="h-7 w-7" />
-            <span className="font-display text-sm font-bold">SEAL</span>
+            <SealMark className="h-8 w-8" />
+            <span className="wordmark wordmark-sm">SEAL</span>
           </Link>
           <span className="font-mono text-[10px] uppercase tracking-wider text-mute">GHMC demo</span>
         </header>
 
-        <main className={`min-h-0 min-w-0 flex-1 ${isCommand ? "overflow-hidden" : "overflow-y-auto pb-[4.5rem] lg:pb-0"}`}>
+        <main
+          className={`relative z-10 flex min-h-0 min-w-0 flex-1 flex-col ${isCommand ? "overflow-hidden" : "overflow-y-auto pb-[4.5rem] lg:pb-0"}`}
+        >
           {children}
         </main>
       </div>

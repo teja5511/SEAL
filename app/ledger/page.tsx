@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { ProofSlider } from "@/components/ProofSlider";
 import { LocalCaption } from "@/components/LocaleContext";
+import { useLiveState } from "@/components/OpsContext";
 import { buildState, ledgerStats } from "@/lib/store";
 
 export default function LedgerPage() {
-  const state = useMemo(() => buildState(0), []);
+  const state = useLiveState(useMemo(() => buildState(0), []));
   const stats = ledgerStats(state);
   const proofs = state.proofs;
   const [active, setActive] = useState(0);

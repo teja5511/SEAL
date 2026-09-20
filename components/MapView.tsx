@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Map, { Marker, Popup, NavigationControl, MapRef } from "react-map-gl/maplibre";
+import Map, { Marker, Popup, NavigationControl, MapRef, Source, Layer } from "react-map-gl/maplibre";
 import type { StyleSpecification } from "maplibre-gl";
 import type { MapLayer, MapVisible, RankedNala } from "@/lib/types";
 import { floodDepthIfUnsealed } from "@/lib/rank";
@@ -22,6 +22,11 @@ interface MapViewProps {
 
 const DEFAULT_MAP_STYLE: string | StyleSpecification = process.env.NEXT_PUBLIC_MAP_STYLE || OPEN_FREE_MAP_DARK;
 const DEFAULT_VISIBLE: MapVisible = { RED: true, YELLOW: true, WATCH: true, sealed: true };
+
+function mapPixelRatio() {
+  if (typeof window === "undefined") return 2;
+  return Math.min(3, Math.max(2, window.devicePixelRatio || 1));
+}
 
 function pinColor(nala: RankedNala, layer: MapLayer) {
   if (nala.status === "verified") return "#2ee6c5";
@@ -53,6 +58,7 @@ export function MapView({
   const [mapStyle, setMapStyle] = useState<string | StyleSpecification>(DEFAULT_MAP_STYLE);
   const fellBack = useRef(false);
   const lastFlownId = useRef<string | null>(null);
+  const [pixelRatio] = useState(mapPixelRatio);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -70,13 +76,43 @@ export function MapView({
     });
   }, [nalas, query, visible]);
 
+  const opsSpine = useMemo(() => {
+    const pins = shown
+      .filter((n) => n.alert === "RED" || n.status === "dispatched" || n.status === "verified")
+      .sort((a, b) => b.risk - a.risk)
+      .slice(0, 10);
+    if (pins.length < 3) {
+      return { type: "FeatureCollection" as const, features: [] };
+    }
+    const cx = 78.4867;
+    const cy = 17.385;
+    const ordered = [...pins].sort((a, b) => Math.atan2(a.lat - cy, a.lng - cx) - Math.atan2(b.lat - cy, b.lng - cx));
+    const ring = [...ordered, ordered[0]];
+    return {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {},
+          geometry: {
+            type: "LineString" as const,
+            coordinates: ring.map((n) => [n.lng, n.lat]),
+          },
+        },
+      ],
+    };
+  }, [shown]);
+
   useEffect(() => {
     if (!mapReady || !selectedNala) return;
-    setActivePopup(selectedNala);
-    if (lastFlownId.current === selectedNala.id) return;
     const first = lastFlownId.current === null;
+    if (first) {
+      lastFlownId.current = selectedNala.id;
+      return;
+    }
+    if (lastFlownId.current !== selectedNala.id) setActivePopup(selectedNala);
+    if (lastFlownId.current === selectedNala.id) return;
     lastFlownId.current = selectedNala.id;
-    if (first) return;
 
     const map = mapRef.current?.getMap();
     if (!map) return;
@@ -113,9 +149,9 @@ export function MapView({
     const map = mapRef.current?.getMap();
     if (!map) return;
     applySealOpsPaint(map);
+    map.once("idle", () => applySealOpsPaint(map));
     map.resize();
     requestAnimationFrame(() => map.resize());
-    window.setTimeout(() => map.resize(), 250);
   }, []);
 
   const handleError = useCallback(() => {
@@ -124,8 +160,18 @@ export function MapView({
     setMapStyle(INK_FALLBACK_STYLE);
   }, [mapReady]);
 
+  useEffect(() => {
+    if (mapReady) return;
+    const timer = window.setTimeout(() => {
+      if (fellBack.current || mapReady) return;
+      fellBack.current = true;
+      setMapStyle(INK_FALLBACK_STYLE);
+    }, 10000);
+    return () => window.clearTimeout(timer);
+  }, [mapReady]);
+
   return (
-    <div className="relative h-full min-h-[280px] w-full overflow-hidden bg-ink">
+    <div className="relative h-full min-h-[280px] w-full overflow-hidden bg-[#031016]">
       <Map
         ref={mapRef}
         initialViewState={{
@@ -138,10 +184,49 @@ export function MapView({
         attributionControl={false}
         dragRotate={false}
         fadeDuration={0}
+        antialias
+        pixelRatio={pixelRatio}
         onLoad={handleLoad}
         onError={handleError}
       >
-        <NavigationControl position="bottom-right" />
+        <NavigationControl position="bottom-right" showCompass={false} />
+
+        {opsSpine.features.length > 0 && (
+          <Source id="seal-ops-spine" type="geojson" data={opsSpine}>
+            <Layer
+              id="seal-ops-spine-glow"
+              type="line"
+              layout={{ "line-cap": "round", "line-join": "round" }}
+              paint={{
+                "line-color": "#2ee6c5",
+                "line-width": 18,
+                "line-blur": 14,
+                "line-opacity": 0.28,
+              }}
+            />
+            <Layer
+              id="seal-ops-spine-mid"
+              type="line"
+              layout={{ "line-cap": "round", "line-join": "round" }}
+              paint={{
+                "line-color": "#2ee6c5",
+                "line-width": 6,
+                "line-blur": 2.4,
+                "line-opacity": 0.55,
+              }}
+            />
+            <Layer
+              id="seal-ops-spine-core"
+              type="line"
+              layout={{ "line-cap": "round", "line-join": "round" }}
+              paint={{
+                "line-color": "#7ad4ff",
+                "line-width": 1.6,
+                "line-opacity": 0.95,
+              }}
+            />
+          </Source>
+        )}
 
         {shown.map((nala) => {
           const isSelected = selectedNala?.id === nala.id;
@@ -204,7 +289,7 @@ export function MapView({
               >
                 <div className="group flex cursor-pointer flex-col items-center">
                   <div
-                    className={`mb-1 rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-tighter shadow-sm ${
+                    className={`mb-1 rounded px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-tight shadow-sm ${
                       isSealed
                         ? "bg-teal text-ink ring-1 ring-teal/50"
                         : nala.status === "held"
@@ -212,8 +297,8 @@ export function MapView({
                           : nala.status === "dispatched"
                             ? "bg-amber text-ink"
                             : nala.alert === "RED"
-                              ? "bg-danger/90 text-white"
-                              : "border border-line bg-ink text-mute"
+                              ? "bg-danger text-white"
+                              : "border border-line bg-panel text-paper"
                     }`}
                   >
                     {isSealed ? "✓ SEALED · LEDGER" : nala.status === "held" ? "HOLD" : nala.id}
@@ -254,7 +339,7 @@ export function MapView({
             onClose={() => setActivePopup(null)}
             className="z-50"
           >
-            <div className="min-w-[240px] max-w-[300px] font-mono text-xs text-white">
+            <div className="min-w-[200px] max-w-[260px] pr-4 font-mono text-xs text-white">
               <div className="mb-1.5 flex items-center justify-between border-b border-line pb-1.5">
                 <span className="font-bold text-teal">
                   {activePopup.id} · {activePopup.ward}
@@ -334,20 +419,22 @@ export function MapView({
         )}
       </Map>
 
-      <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 items-center gap-3 rounded-full border border-line bg-panel/90 px-3 py-1.5 font-mono text-[10px] text-mute backdrop-blur md:flex">
-        <span className="relative flex h-3 w-3 items-center justify-center overflow-hidden rounded-full border border-teal">
-          <span className="absolute h-px w-full origin-center bg-teal animate-radar" />
-        </span>
-        <span>Hyderabad basin · © OSM · OpenFreeMap</span>
-        <span className="text-line">|</span>
+      {!mapReady && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#031016]/90 font-mono text-xs text-mute">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal border-t-transparent" />
+          <span className="font-semibold uppercase tracking-wider text-teal">Loading Hyderabad map</span>
+        </div>
+      )}
+
+      <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden max-w-[min(28rem,calc(100%-4.5rem))] flex-wrap items-center gap-2 rounded-full border border-line bg-panel/95 px-3 py-1.5 font-mono text-[10px] text-paper backdrop-blur md:flex">
         <span className="inline-flex items-center gap-1">
-          <AlertMark alert="RED" /> RED diamond
+          <AlertMark alert="RED" /> RED
         </span>
         <span className="inline-flex items-center gap-1">
-          <AlertMark alert="YELLOW" /> YELLOW triangle
+          <AlertMark alert="YELLOW" /> YELLOW
         </span>
         <span className="inline-flex items-center gap-1">
-          <AlertMark alert="WATCH" /> WATCH circle
+          <AlertMark alert="WATCH" /> WATCH
         </span>
         <span className="inline-flex items-center gap-1">
           <AlertMark alert="WATCH" sealed /> SEALED

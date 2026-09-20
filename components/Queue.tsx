@@ -11,6 +11,7 @@ interface QueueProps {
   onDispatchNala?: (nalaId: string) => void;
   search?: string;
   onSearch?: (q: string) => void;
+  reportedIds?: Set<string>;
   activeCrews?: number;
   completed?: number;
 }
@@ -39,6 +40,7 @@ export function Queue({
   onDispatchNala,
   search = "",
   onSearch,
+  reportedIds,
   activeCrews,
   completed,
 }: QueueProps) {
@@ -114,7 +116,7 @@ export function Queue({
         </label>
       )}
 
-      <div className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+      <div className="min-h-[12rem] flex-1 overflow-auto scrollbar-thin">
         <table className="w-full table-fixed text-left text-[11px]">
           <colgroup>
             <col className="w-8" />
@@ -152,7 +154,14 @@ export function Queue({
                 >
                   <td className="px-2 py-2 font-mono text-mute">{index + 1}</td>
                   <td className="truncate px-2 py-2">
-                    <div className="font-mono text-[10px] text-mute">{n.id}</div>
+                    <div className="font-mono text-[10px] text-mute">
+                      {n.id}
+                      {reportedIds?.has(n.id) ? (
+                        <span className="ml-1.5 rounded bg-teal/15 px-1 py-0.5 text-[8px] uppercase tracking-wider text-teal">
+                          Report
+                        </span>
+                      ) : null}
+                    </div>
                     <div className="truncate text-[12px] font-medium text-paper">{shortPlace(n)}</div>
                     <LocalCaption text={n.nameTe} className="truncate text-[10px] text-mute" />
                   </td>
@@ -173,8 +182,8 @@ export function Queue({
       </div>
 
       <div className="flex items-center justify-between border-t border-line/80 px-3 py-2 text-[11px]">
-        <span className="text-teal">
-          View all drains → <span className="text-mute">{rows.length} shown</span>
+        <span className="text-mute">
+          {rows.length} of {nalas.length} drains
         </span>
         <span className="font-mono text-[10px] text-mute">Sort: Risk</span>
       </div>
@@ -185,7 +194,7 @@ export function Queue({
 function RowAction({ nala, onDispatch }: { nala: RankedNala; onDispatch?: (id: string) => void }) {
   if (nala.status === "held") {
     return (
-      <span className="inline-flex rounded-md border border-danger/50 bg-danger/15 px-2 py-1 font-mono text-[10px] font-bold uppercase text-danger">
+      <span className="inline-flex whitespace-nowrap rounded-md border border-danger/50 bg-danger/15 px-2 py-1 font-mono text-[10px] font-bold uppercase text-danger">
         HOLD
       </span>
     );
@@ -204,9 +213,9 @@ function RowAction({ nala, onDispatch }: { nala: RankedNala; onDispatch?: (id: s
   if (nala.status === "dispatched") {
     return (
       <a
-        href="/crew"
+        href={`/crew?job=${nala.id}`}
         onClick={(e) => e.stopPropagation()}
-        className="inline-flex rounded-md border border-line px-2 py-1 font-mono text-[10px] uppercase text-mute hover:border-teal/40 hover:text-teal"
+        className="inline-flex whitespace-nowrap rounded-md border border-line px-2 py-1 font-mono text-[10px] uppercase text-mute hover:border-teal/40 hover:text-teal"
       >
         En route
       </a>
@@ -220,7 +229,7 @@ function RowAction({ nala, onDispatch }: { nala: RankedNala; onDispatch?: (id: s
         e.stopPropagation();
         onDispatch?.(nala.id);
       }}
-      className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ${
+      className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-semibold ${
         urgent ? "bg-danger text-white hover:bg-danger/90" : "border border-amber/50 bg-amber/15 text-amber hover:bg-amber/25"
       }`}
     >

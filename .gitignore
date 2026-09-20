@@ -6,3 +6,4 @@ node_modules
 .private-key.json
 .DS_Store
 *.tsbuildinfo
+.vercel

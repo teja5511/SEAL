@@ -35,9 +35,15 @@ export function ConditionsCard({ weather, live }: { weather: WeatherPacket; live
       </div>
 
       <div className="grid grid-cols-4 gap-1.5">
-        <Metric icon="temp" label="Air Temperature" value={`${weather.tempC.toFixed(0)}°C`} />
+        <Metric icon="temp" label="Air temp" value={`${weather.tempC.toFixed(0)}°C`} />
         <Metric icon="hum" label="Humidity" value={`${weather.humidity}%`} />
-        <Metric icon="wbgt" label="WBGT" value={`${weather.wbgtC.toFixed(0)}°C`} warn={weather.wbgtC >= 32} />
+        <Metric
+          icon="wbgt"
+          label="WBGT"
+          value={`${weather.wbgtC.toFixed(1)}°C`}
+          warn={weather.wbgtC >= 32}
+          caution={weather.wbgtC >= 28 && weather.wbgtC < 32}
+        />
         <Metric
           icon="wind"
           label="Wind"
@@ -90,18 +96,22 @@ function Metric({
   label,
   value,
   warn,
+  caution,
 }: {
   icon: "temp" | "hum" | "wbgt" | "wind";
   label: string;
   value: string;
   warn?: boolean;
+  caution?: boolean;
 }) {
+  const tone = warn ? "text-danger" : caution ? "text-amber" : "text-lagoon";
   return (
     <div className="rounded-lg border border-line/80 bg-ink/30 p-2 text-center">
-      <div className={`mx-auto mb-1 ${warn ? "text-danger" : "text-lagoon"}`}>
+      <div className={`mx-auto mb-1 ${tone}`}>
         {icon === "temp" && (
           <svg width="16" height="16" viewBox="0 0 16 16" className="mx-auto" fill="none" aria-hidden>
-            <path d="M4 10.5a4 4 0 1 0 8 0c0-1.5-1-2.6-1.6-4.2L9 2.5H7L5.6 6.3C5 7.9 4 9 4 10.5Z" stroke="currentColor" />
+            <path d="M7.2 2.2h1.6c.4 0 .7.3.7.7v6.2a2.6 2.6 0 1 1-3 0V2.9c0-.4.3-.7.7-.7Z" stroke="currentColor" />
+            <circle cx="8" cy="11.4" r="1.3" fill="currentColor" />
           </svg>
         )}
         {icon === "hum" && (
@@ -120,7 +130,9 @@ function Metric({
           </svg>
         )}
       </div>
-      <div className={`font-display text-sm font-bold tabular-nums ${warn ? "text-danger" : "text-paper"}`}>{value}</div>
+      <div className={`font-display text-sm font-bold tabular-nums ${warn ? "text-danger" : caution ? "text-amber" : "text-paper"}`}>
+        {value}
+      </div>
       <div className="mt-0.5 text-[9px] leading-tight text-mute">{label}</div>
     </div>
   );

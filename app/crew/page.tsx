@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PhoneFrame } from "@/components/PhoneFrame";
 import { LocalCaption, useDrainCopy, useLocale } from "@/components/LocaleContext";
+import { useOps } from "@/components/OpsContext";
+import { applyOps } from "@/lib/ops";
 import { buildState } from "@/lib/store";
 import type { JobStatus, RankedNala } from "@/lib/types";
 
@@ -33,7 +35,9 @@ const CLOCK = "12:48";
 export default function CrewPage() {
   const { showLocal } = useLocale();
   const { drain } = useDrainCopy();
-  const state = useMemo(() => buildState(-2), []);
+  const { ops, verifyPin } = useOps();
+  const replay = useMemo(() => buildState(-2), []);
+  const state = useMemo(() => applyOps(replay, ops), [replay, ops]);
   const [statusById, setStatusById] = useState<Partial<Record<string, JobStatus>>>({});
   const jobs = useMemo(() => {
     const live = state.nalas
@@ -50,10 +54,25 @@ export default function CrewPage() {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const jobQueryConsumed = useRef(false);
 
   const hold = job?.status === "held";
   const alreadyPaid = job?.status === "verified";
   const canSend = Boolean(job) && !hold && !alreadyPaid && !busy;
+
+  useEffect(() => {
+    if (jobQueryConsumed.current) return;
+    const jobId = new URLSearchParams(window.location.search).get("job");
+    if (!jobId) {
+      jobQueryConsumed.current = true;
+      return;
+    }
+    const next = jobs.find((n) => n.id === jobId);
+    if (next) {
+      loadJob(next);
+      jobQueryConsumed.current = true;
+    }
+  }, [jobs]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,6 +99,17 @@ export default function CrewPage() {
       const preview = file ? URL.createObjectURL(file) : "/demo/clear-after.svg";
       if (clogDropped) {
         setStatusById((prev) => ({ ...prev, [job.id]: "verified" }));
+        verifyPin({
+          nalaId: job.id,
+          beforeUrl: `/demo/${job.clogClass}-before.svg`,
+          afterUrl: "/demo/clear-after.svg",
+          beforeClog: job.clog,
+          afterClog: after,
+          verified: true,
+          paidInr: job.payInr,
+          kgPlastic: Math.round(8 + job.clog / 8),
+          at: "live",
+        });
       }
 
       const seal: Pick<Chat, "text" | "te"> = clogDropped
@@ -128,7 +158,8 @@ export default function CrewPage() {
           cannot be overridden. After-photo is the only way money moves.
         </p>
         <p className="mt-3 font-mono text-[11px] text-amber">
-          HeatGuard WBGT {state.weather.wbgtC}°C · {state.weather.crewSignal} — HOLD is per pin, not a city-wide lock.
+          HeatGuard WBGT {state.weather.wbgtC.toFixed(1)}°C · {state.weather.crewSignal.replace(/_/g, " ")}. Heat-held
+          pins cannot enter the drain.
         </p>
         <div className="mt-6 space-y-2">
           {jobs.map((n) => (
@@ -145,13 +176,13 @@ export default function CrewPage() {
                   n.status === "held" ? "bg-danger" : n.status === "verified" ? "bg-teal" : "bg-amber"
                 }`}
               />
-              <span>
+              <span className="min-w-0 pr-3">
                 <span className="font-mono text-xs text-teal">{n.id}</span>
-                <span className="ml-2 text-sm">{n.nameEn}</span>
-                <LocalCaption text={n.nameTe} className="mt-1 block text-[11px] text-mute" />
+                <span className="ml-2 truncate text-sm">{n.nameEn}</span>
+                <LocalCaption text={n.nameTe} className="mt-1 block truncate text-[11px] text-mute" />
               </span>
               <span
-                className={`font-mono text-xs uppercase ${
+                className={`shrink-0 font-mono text-xs uppercase ${
                   n.status === "held" ? "text-danger" : n.status === "verified" ? "text-teal" : "text-amber"
                 }`}
               >

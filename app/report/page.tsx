@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { buildState } from "@/lib/store";
 import { LocalCaption, useDrainCopy } from "@/components/LocaleContext";
+import { useOps } from "@/components/OpsContext";
 
 type VisionResult = {
   success: boolean;
@@ -67,18 +69,22 @@ function getHeuristicFallback(filename: string): VisionResult {
 
 export default function ReportPage() {
   const { drain, drainPin } = useDrainCopy();
+  const { queueReport } = useOps();
+  const router = useRouter();
   const state = useMemo(() => buildState(-4), []);
   const [nalaId, setNalaId] = useState(state.nalas[0]?.id ?? "N-11");
   const [preview, setPreview] = useState<string | null>(null);
   const [filename, setFilename] = useState("drain-sample.jpg");
   const [result, setResult] = useState<VisionResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [queued, setQueued] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const nala = state.nalas.find((n) => n.id === nalaId) ?? state.nalas[0];
 
   async function analyze(file?: File | null, filenameArg?: string) {
     setBusy(true);
+    setQueued(false);
     let name = filenameArg || file?.name || filename;
     if (name.toLowerCase() === "blocked") name = "blocked-before.svg";
     else if (name.toLowerCase() === "plastic") name = "plastic-before.svg";
@@ -118,6 +124,18 @@ export default function ReportPage() {
     }
   }
 
+  function sendToCommand() {
+    if (!result) return;
+    queueReport({
+      nalaId,
+      clog: result.clog,
+      clogClass: result.clogClass,
+      at: "live",
+    });
+    setQueued(true);
+    router.push(`/?pin=${encodeURIComponent(nalaId)}`);
+  }
+
   return (
     <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[1.15fr_0.85fr]">
       <section className="hud-glass rounded-[22px] p-6 shadow-hud">
@@ -136,7 +154,7 @@ export default function ReportPage() {
           onChange={(e) => setNalaId(e.target.value)}
           className="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-3 text-sm"
         >
-          {state.nalas.slice(0, 12).map((n) => (
+          {state.nalas.map((n) => (
             <option key={n.id} value={n.id}>
               {n.id} · {n.nameEn}
             </option>
@@ -259,6 +277,13 @@ export default function ReportPage() {
   2
 )}
             </pre>
+            <button
+              type="button"
+              onClick={sendToCommand}
+              className="w-full rounded-full bg-teal px-4 py-2.5 text-sm font-semibold text-ink hover:bg-teal/90"
+            >
+              {queued ? "Queued on Command →" : "Send to Command queue"}
+            </button>
             <p className="text-xs text-mute">
               Gemini can label the photo. It cannot change the risk rank on Command. Dual-core contract.
             </p>

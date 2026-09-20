@@ -3,12 +3,13 @@
 import { useMemo } from "react";
 import { buildState, ledgerStats } from "@/lib/store";
 import { useDrainCopy, LocalCaption } from "@/components/LocaleContext";
+import { useLiveState } from "@/components/OpsContext";
 
 export default function AnalyticsPage() {
   const { drain, drains } = useDrainCopy();
 
-  const t4 = useMemo(() => buildState(-4), []);
-  const t0 = useMemo(() => buildState(0), []);
+  const t4 = useLiveState(useMemo(() => buildState(-4), []));
+  const t0 = useLiveState(useMemo(() => buildState(0), []));
   const stats = useMemo(() => ledgerStats(t0), [t0]);
 
   const nalas = t4?.nalas ?? [];

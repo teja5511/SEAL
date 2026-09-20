@@ -48,10 +48,24 @@ body::after {
   outline-offset: 2px;
 }
 
+.wordmark {
+  font-family: var(--font-title), var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.85rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.wordmark-sm {
+  font-size: 1.4rem;
+}
+
 .hud-glass {
   background: rgba(11, 21, 32, 0.88);
   border: 1px solid rgba(26, 51, 68, 0.95);
-  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
 }
 
 .board-card {
@@ -80,15 +94,30 @@ body::after {
 }
 
 .maplibregl-map,
-.maplibregl-canvas-container,
-.maplibregl-canvas {
+.maplibregl-canvas-container {
   width: 100% !important;
   height: 100% !important;
-  background: #061018 !important;
+  background: #031016 !important;
 }
 
 .maplibregl-canvas {
-  filter: saturate(0.72) brightness(0.9) contrast(1.08);
+  background: #031016 !important;
+  image-rendering: auto;
+}
+
+.maplibregl-canvas-container::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(rgba(46, 230, 197, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46, 230, 197, 0.07) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 42%, transparent 88%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 42%, transparent 88%);
 }
 
 .maplibregl-canvas-container::after {
@@ -98,9 +127,9 @@ body::after {
   inset: 0;
   z-index: 1;
   background:
-    radial-gradient(ellipse at center, transparent 46%, rgba(6, 16, 24, 0.62) 100%),
-    radial-gradient(ellipse at 78% 12%, rgba(46, 230, 197, 0.09), transparent 42%),
-    radial-gradient(ellipse at 8% 88%, rgba(122, 212, 255, 0.07), transparent 50%);
+    radial-gradient(ellipse at center, transparent 46%, rgba(3, 16, 22, 0.72) 100%),
+    radial-gradient(ellipse at 78% 8%, rgba(46, 230, 197, 0.08), transparent 38%),
+    radial-gradient(ellipse at 12% 92%, rgba(122, 212, 255, 0.05), transparent 46%);
 }
 
 .maplibregl-popup-content {
@@ -118,6 +147,20 @@ body::after {
 
 .maplibregl-popup-anchor-top .maplibregl-popup-tip {
   border-bottom-color: #0b1520 !important;
+}
+
+.maplibregl-popup-close-button {
+  color: #9ab0c0 !important;
+  font-size: 18px;
+  right: 6px;
+  top: 2px;
+  width: 22px;
+  height: 22px;
+}
+
+.maplibregl-popup-close-button:hover {
+  color: #e8eef6 !important;
+  background: transparent !important;
 }
 
 .maplibregl-ctrl-group {

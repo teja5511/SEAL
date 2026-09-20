@@ -19,6 +19,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-geist)", "ui-sans-serif", "system-ui"],
         display: ["var(--font-syne)", "ui-sans-serif"],
+        title: ["var(--font-title)", "var(--font-syne)", "ui-sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace"],
       },
       boxShadow: {
