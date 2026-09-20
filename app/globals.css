@@ -97,11 +97,11 @@ body::after {
 .maplibregl-canvas-container {
   width: 100% !important;
   height: 100% !important;
-  background: #031016 !important;
+  background: #061525 !important;
 }
 
 .maplibregl-canvas {
-  background: #031016 !important;
+  background: #061525 !important;
   image-rendering: auto;
 }
 
@@ -111,13 +111,13 @@ body::after {
   position: absolute;
   inset: 0;
   z-index: 1;
-  opacity: 0.22;
+  opacity: 0.1;
   background-image:
-    linear-gradient(rgba(46, 230, 197, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(46, 230, 197, 0.07) 1px, transparent 1px);
+    linear-gradient(rgba(122, 212, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 212, 255, 0.08) 1px, transparent 1px);
   background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse at center, black 42%, transparent 88%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 42%, transparent 88%);
+  mask-image: radial-gradient(ellipse at center, black 38%, transparent 82%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 38%, transparent 82%);
 }
 
 .maplibregl-canvas-container::after {
@@ -127,9 +127,9 @@ body::after {
   inset: 0;
   z-index: 1;
   background:
-    radial-gradient(ellipse at center, transparent 46%, rgba(3, 16, 22, 0.72) 100%),
-    radial-gradient(ellipse at 78% 8%, rgba(46, 230, 197, 0.08), transparent 38%),
-    radial-gradient(ellipse at 12% 92%, rgba(122, 212, 255, 0.05), transparent 46%);
+    radial-gradient(ellipse at center, transparent 62%, rgba(6, 21, 37, 0.38) 100%),
+    radial-gradient(ellipse at 78% 8%, rgba(122, 212, 255, 0.05), transparent 40%),
+    radial-gradient(ellipse at 12% 92%, rgba(90, 170, 220, 0.04), transparent 48%);
 }
 
 .maplibregl-popup-content {

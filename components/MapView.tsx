@@ -25,7 +25,7 @@ const DEFAULT_VISIBLE: MapVisible = { RED: true, YELLOW: true, WATCH: true, seal
 
 function mapPixelRatio() {
   if (typeof window === "undefined") return 2;
-  return Math.min(3, Math.max(2, window.devicePixelRatio || 1));
+  return Math.min(2.5, Math.max(2, window.devicePixelRatio || 2));
 }
 
 function pinColor(nala: RankedNala, layer: MapLayer) {
@@ -171,7 +171,7 @@ export function MapView({
   }, [mapReady]);
 
   return (
-    <div className="relative h-full min-h-[280px] w-full overflow-hidden bg-[#031016]">
+    <div className="relative h-full min-h-[280px] w-full overflow-hidden bg-[#061525]">
       <Map
         ref={mapRef}
         initialViewState={{
@@ -198,7 +198,7 @@ export function MapView({
               type="line"
               layout={{ "line-cap": "round", "line-join": "round" }}
               paint={{
-                "line-color": "#2ee6c5",
+                "line-color": "#3d8ec4",
                 "line-width": 18,
                 "line-blur": 14,
                 "line-opacity": 0.28,
@@ -209,10 +209,10 @@ export function MapView({
               type="line"
               layout={{ "line-cap": "round", "line-join": "round" }}
               paint={{
-                "line-color": "#2ee6c5",
+                "line-color": "#6cb4dc",
                 "line-width": 6,
                 "line-blur": 2.4,
-                "line-opacity": 0.55,
+                "line-opacity": 0.5,
               }}
             />
             <Layer
@@ -420,9 +420,9 @@ export function MapView({
       </Map>
 
       {!mapReady && (
-        <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#031016]/90 font-mono text-xs text-mute">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal border-t-transparent" />
-          <span className="font-semibold uppercase tracking-wider text-teal">Loading Hyderabad map</span>
+        <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#061525]/90 font-mono text-xs text-mute">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-lagoon border-t-transparent" />
+          <span className="font-semibold uppercase tracking-wider text-lagoon">Loading Hyderabad map</span>
         </div>
       )}
 
